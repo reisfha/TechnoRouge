@@ -2,3 +2,4 @@ node_modules/
 dist/
 nohup.out
 *.log
+.opencode.md
