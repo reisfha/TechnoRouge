@@ -1,28 +1,26 @@
+import * as THREE from 'three';
 import './styles/cards.css';
 import './styles/hud.css';
 import './styles/menus.css';
+import { App } from './app/App';
 
-import Phaser from 'phaser';
-import { BootScene } from './scenes/BootScene';
-import { MenuScene } from './scenes/MenuScene';
-import { CombatScene } from './scenes/CombatScene';
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+document.getElementById('game-container')!.appendChild(renderer.domElement);
 
-const config: Phaser.Types.Core.GameConfig = {
-  type: Phaser.AUTO,
-  parent: 'game-container',
-  width: 960,
-  height: 640,
-  backgroundColor: '#0a0a0f',
-  scale: {
-    mode: Phaser.Scale.FIT,
-    autoCenter: Phaser.Scale.CENTER_BOTH,
-  },
-  scene: [BootScene, MenuScene, CombatScene],
-  input: {
-    keyboard: true,
-    touch: true,
-    mouse: true,
-  },
-};
+const scene = new THREE.Scene();
 
-new Phaser.Game(config);
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 200);
+camera.position.set(0, 1.6, 0);
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+const app = new App(renderer, scene, camera);
+app.start();

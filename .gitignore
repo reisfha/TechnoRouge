@@ -3,3 +3,4 @@ dist/
 nohup.out
 *.log
 .opencode.md
+*.zip
