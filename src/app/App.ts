@@ -65,16 +65,24 @@ export class App {
 
   startCombat(enemyDef: string): void {
     this.currentState = 'combat';
-    if (this.worldScene) this.worldScene.pause();
+    if (this.worldScene) {
+      this.worldScene.pause();
+    }
 
     Game.spawnSingleEnemy(enemyDef);
     this.combatScene = new CombatScene();
-    this.combatScene.init(() => this.returnToWorld(), () => this.showMenu());
+    this.combatScene.init(() => {
+      this.returnToWorld();
+    }, () => {
+      this.showMenu();
+    });
   }
 
   private returnToWorld(): void {
     this.cleanupCombat();
-    if (this.worldScene) this.worldScene.resume();
+    if (this.worldScene) {
+      this.worldScene.resume();
+    }
     if (Game.phase === 'defeat' || Game.phase === 'victory') {
       this.showMenu();
       return;
@@ -83,11 +91,17 @@ export class App {
   }
 
   private cleanupWorld(): void {
-    if (this.worldScene) { this.worldScene.destroy(); this.worldScene = null; }
+    if (this.worldScene) {
+      this.worldScene.destroy();
+      this.worldScene = null;
+    }
   }
 
   private cleanupCombat(): void {
-    if (this.combatScene) { this.combatScene.destroy(); this.combatScene = null; }
+    if (this.combatScene) {
+      this.combatScene.destroy();
+      this.combatScene = null;
+    }
   }
 
   destroy(): void {

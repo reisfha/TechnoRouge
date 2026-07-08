@@ -5,6 +5,7 @@ import { PlayerController } from '../world/PlayerController';
 import { CameraController } from '../world/CameraController';
 import { Collectible, CollectibleDef } from '../world/Collectible';
 import { EnemyEntity, EnemyEntityDef } from '../world/EnemyEntity';
+import { MobileControls } from '../world/MobileControls';
 
 const CARD_SPAWNS: CollectibleDef[] = [
   { position: new THREE.Vector3(5, 0, -3), cardId: 'inject' },
@@ -38,6 +39,7 @@ export class WorldScene {
   private time: number = 0;
   private paused: boolean = false;
   private notificationEl: HTMLElement | null = null;
+  private mobileControls: MobileControls | null = null;
 
   onCombatTrigger?: (enemyDef: string) => void;
 
@@ -49,17 +51,20 @@ export class WorldScene {
   init(): void {
     this.scene.background = new THREE.Color(0x050510);
 
-    this.scene.add(new THREE.AmbientLight(0x222244, 0.4));
+    const ambient = new THREE.AmbientLight(0x222244, 0.4);
+    this.scene.add(ambient);
+
     const dir = new THREE.DirectionalLight(0x4444ff, 0.5);
     dir.position.set(10, 20, 10);
     this.scene.add(dir);
 
-    const p1 = new THREE.PointLight(0xff44aa, 0.3, 30);
-    p1.position.set(-10, 5, -10);
-    this.scene.add(p1);
-    const p2 = new THREE.PointLight(0x44ffaa, 0.3, 30);
-    p2.position.set(10, 5, 10);
-    this.scene.add(p2);
+    const point1 = new THREE.PointLight(0xff44aa, 0.3, 30);
+    point1.position.set(-10, 5, -10);
+    this.scene.add(point1);
+
+    const point2 = new THREE.PointLight(0x44ffaa, 0.3, 30);
+    point2.position.set(10, 5, 10);
+    this.scene.add(point2);
 
     this.terrain = new Terrain(this.scene);
     this.scenery = new Scenery(this.scene);
@@ -68,54 +73,94 @@ export class WorldScene {
     this.cameraController = new CameraController(this.camera, () => this.player.getPosition());
     this.player.setAimPoint(this.cameraController.aimPoint);
 
-    for (const def of CARD_SPAWNS) this.collectibles.push(new Collectible(this.scene, def));
-    for (const def of ENEMY_SPAWNS) this.enemyEntities.push(new EnemyEntity(this.scene, def));
+    for (const def of CARD_SPAWNS) {
+      this.collectibles.push(new Collectible(this.scene, def));
+    }
+
+    for (const def of ENEMY_SPAWNS) {
+      this.enemyEntities.push(new EnemyEntity(this.scene, def));
+    }
+
     this.createStars();
+
     this.createHUD();
+
+    this.mobileControls = new MobileControls();
+    this.player.mobileControls = this.mobileControls;
+    this.cameraController.mobileControls = this.mobileControls;
+
+    if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+      this.mobileControls.enable();
+    }
   }
 
   private createStars(): void {
-    const positions = new Float32Array(6000);
-    for (let i = 0; i < 6000; i++) positions[i] = (Math.random() - 0.5) * 400;
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    const stars = new THREE.Points(geo, new THREE.PointsMaterial({ color: 0x446688, size: 0.2, transparent: true, opacity: 0.6 }));
+    const starsGeo = new THREE.BufferGeometry();
+    const starCount = 2000;
+    const positions = new Float32Array(starCount * 3);
+    for (let i = 0; i < starCount * 3; i++) {
+      positions[i] = (Math.random() - 0.5) * 400;
+    }
+    starsGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    const starMat = new THREE.PointsMaterial({ color: 0x446688, size: 0.2, transparent: true, opacity: 0.6 });
+    const stars = new THREE.Points(starsGeo, starMat);
     stars.position.y = 30;
     this.scene.add(stars);
   }
 
   private createHUD(): void {
     const crosshair = document.createElement('div');
-    crosshair.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:20px;height:20px;pointer-events:none;z-index:15';
-    crosshair.innerHTML = '<svg width="20" height="20" viewBox="0 0 20 20"><circle cx="10" cy="10" r="2" fill="none" stroke="#44ddff" stroke-width="1" opacity="0.7"/>' +
-      '<line x1="10" y1="0" x2="10" y2="6" stroke="#44ddff" stroke-width="1" opacity="0.4"/>' +
-      '<line x1="10" y1="14" x2="10" y2="20" stroke="#44ddff" stroke-width="1" opacity="0.4"/>' +
-      '<line x1="0" y1="10" x2="6" y2="10" stroke="#44ddff" stroke-width="1" opacity="0.4"/>' +
-      '<line x1="14" y1="10" x2="20" y2="10" stroke="#44ddff" stroke-width="1" opacity="0.4"/></svg>';
+    crosshair.style.cssText = `
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      width: 20px; height: 20px; pointer-events: none; z-index: 15;
+    `;
+    crosshair.innerHTML = `
+      <svg width="20" height="20" viewBox="0 0 20 20">
+        <circle cx="10" cy="10" r="2" fill="none" stroke="#44ddff" stroke-width="1" opacity="0.7"/>
+        <line x1="10" y1="0" x2="10" y2="6" stroke="#44ddff" stroke-width="1" opacity="0.4"/>
+        <line x1="10" y1="14" x2="10" y2="20" stroke="#44ddff" stroke-width="1" opacity="0.4"/>
+        <line x1="0" y1="10" x2="6" y2="10" stroke="#44ddff" stroke-width="1" opacity="0.4"/>
+        <line x1="14" y1="10" x2="20" y2="10" stroke="#44ddff" stroke-width="1" opacity="0.4"/>
+      </svg>
+    `;
     document.getElementById('ui-overlay')!.appendChild(crosshair);
 
     this.notificationEl = document.createElement('div');
-    this.notificationEl.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:Courier New,monospace;color:#44ddff;font-size:18px;text-shadow:0 0 10px #44ddff80;pointer-events:none;opacity:0;transition:opacity .3s;z-index:20;text-align:center';
+    this.notificationEl.style.cssText = `
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      font-family: 'Courier New', monospace; color: #44ddff; font-size: 18px;
+      text-shadow: 0 0 10px #44ddff80; pointer-events: none; opacity: 0;
+      transition: opacity 0.3s; z-index: 20; text-align: center;
+    `;
     document.getElementById('ui-overlay')!.appendChild(this.notificationEl);
 
-    const help = document.createElement('div');
-    help.style.cssText = 'position:absolute;top:10px;left:50%;transform:translateX(-50%);font-family:Courier New,monospace;color:#444;font-size:11px;z-index:20;pointer-events:none;text-align:center';
-    help.textContent = 'WASD MOVE | MOUSE = AIM + LOOK | APPROACH ENEMIES TO FIGHT | COLLECT DATA CRYSTALS';
-    document.getElementById('ui-overlay')!.appendChild(help);
+    const helpEl = document.createElement('div');
+    helpEl.style.cssText = `
+      position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+      font-family: 'Courier New', monospace; color: #444; font-size: 11px;
+      z-index: 20; pointer-events: none; text-align: center;
+    `;
+    helpEl.className = 'world-help-text';
+    helpEl.innerHTML = 'WASD MOVE | MOUSE = AIM + LOOK | APPROACH ENEMIES TO FIGHT | COLLECT DATA CRYSTALS';
+    document.getElementById('ui-overlay')!.appendChild(helpEl);
   }
 
   update(delta: number): void {
     if (this.paused) return;
     this.time += delta;
 
+    if (this.mobileControls) this.mobileControls.update();
     this.cameraController.update(delta);
     this.player.setAimPoint(this.cameraController.aimPoint);
     this.player.update(delta);
 
     const playerPos = this.player.getPosition();
+
     for (const c of this.collectibles) {
       c.update(this.time);
-      if (c.checkCollection(playerPos)) this.showNotification(`ACQUIRED: ${c.cardId.toUpperCase()}`);
+      if (c.checkCollection(playerPos)) {
+        this.showNotification(`ACQUIRED: ${c.cardId.toUpperCase()}`);
+      }
     }
 
     for (const e of this.enemyEntities) {
@@ -123,7 +168,11 @@ export class WorldScene {
       if (e.checkDetection(playerPos)) {
         this.showNotification(`COMBAT: ${e.name}`);
         this.paused = true;
-        setTimeout(() => this.onCombatTrigger?.(e.enemyId), 500);
+        setTimeout(() => {
+          if (this.onCombatTrigger) {
+            this.onCombatTrigger(e.enemyId);
+          }
+        }, 500);
       }
     }
   }
@@ -132,13 +181,21 @@ export class WorldScene {
     if (!this.notificationEl) return;
     this.notificationEl.textContent = msg;
     this.notificationEl.style.opacity = '1';
-    setTimeout(() => { if (this.notificationEl) this.notificationEl.style.opacity = '0'; }, 1500);
+    setTimeout(() => {
+      if (this.notificationEl) this.notificationEl.style.opacity = '0';
+    }, 1500);
   }
 
-  pause(): void { this.paused = true; }
-  resume(): void { this.paused = false; }
+  pause(): void {
+    this.paused = true;
+  }
+
+  resume(): void {
+    this.paused = false;
+  }
 
   destroy(): void {
+    if (this.mobileControls) this.mobileControls.destroy();
     this.player.destroy();
     this.cameraController.destroy();
     for (const c of this.collectibles) c.destroy();

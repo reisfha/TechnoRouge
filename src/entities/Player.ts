@@ -114,9 +114,14 @@ export class Player {
   }
 
   takeDamage(amount: number): number {
-    const blocked = Math.min(this.block, amount);
+    let finalDamage = amount;
+    const vulnerableStacks = this.getEffectStacks('vulnerable');
+    if (vulnerableStacks > 0) {
+      finalDamage = Math.floor(finalDamage * 1.5);
+    }
+    const blocked = Math.min(this.block, finalDamage);
     this.block -= blocked;
-    const actual = amount - blocked;
+    const actual = finalDamage - blocked;
     this.hp = Math.max(0, this.hp - actual);
     return actual;
   }

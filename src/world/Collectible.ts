@@ -1,11 +1,23 @@
 import * as THREE from 'three';
 
-export interface CollectibleDef { position: THREE.Vector3; cardId: string }
+export interface CollectibleDef {
+  position: THREE.Vector3;
+  cardId: string;
+}
 
-const COLORS: Record<string, number> = {
-  strike: 0xff4455, defend: 0x44ddff, inject: 0xff4455, barrier: 0x44ddff,
-  overclock: 0xbb66ff, worm: 0x44ff66, turbo: 0xbb66ff, overload: 0xff8844,
-  fortify: 0x44ddff, data_leak: 0x44ff66, recompile: 0xffdd44, neural_blitz: 0xff4455,
+const COLLECTIBLE_COLORS: Record<string, number> = {
+  strike: 0xff4455,
+  defend: 0x44ddff,
+  inject: 0xff4455,
+  barrier: 0x44ddff,
+  overclock: 0xbb66ff,
+  worm: 0x44ff66,
+  turbo: 0xbb66ff,
+  overload: 0xff8844,
+  fortify: 0x44ddff,
+  data_leak: 0x44ff66,
+  recompile: 0xffdd44,
+  neural_blitz: 0xff4455,
 };
 
 export class Collectible {
@@ -19,23 +31,37 @@ export class Collectible {
     this.floatOffset = Math.random() * Math.PI * 2;
     this.mesh = new THREE.Group();
 
-    const color = COLORS[def.cardId] || 0x44ddff;
-    const crystal = new THREE.Mesh(
-      new THREE.OctahedronGeometry(0.4, 0),
-      new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.6, metalness: 0.7, roughness: 0.2, transparent: true, opacity: 0.9 })
-    );
+    const color = COLLECTIBLE_COLORS[def.cardId] || 0x44ddff;
+
+    const crystalGeo = new THREE.OctahedronGeometry(0.4, 0);
+    const crystalMat = new THREE.MeshStandardMaterial({
+      color: color,
+      emissive: color,
+      emissiveIntensity: 0.6,
+      metalness: 0.7,
+      roughness: 0.2,
+      transparent: true,
+      opacity: 0.9,
+    });
+    const crystal = new THREE.Mesh(crystalGeo, crystalMat);
     this.mesh.add(crystal);
 
-    const inner = new THREE.Mesh(
-      new THREE.OctahedronGeometry(0.2, 0),
-      new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.5 })
-    );
+    const innerGeo = new THREE.OctahedronGeometry(0.2, 0);
+    const innerMat = new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0.5,
+    });
+    const inner = new THREE.Mesh(innerGeo, innerMat);
     this.mesh.add(inner);
 
-    const glow = new THREE.Mesh(
-      new THREE.SphereGeometry(0.6, 8, 8),
-      new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.15 })
-    );
+    const glowGeo = new THREE.SphereGeometry(0.6, 8, 8);
+    const glowMat = new THREE.MeshBasicMaterial({
+      color: color,
+      transparent: true,
+      opacity: 0.15,
+    });
+    const glow = new THREE.Mesh(glowGeo, glowMat);
     this.mesh.add(glow);
 
     this.mesh.position.copy(def.position);
@@ -51,7 +77,8 @@ export class Collectible {
 
   checkCollection(playerPos: THREE.Vector3): boolean {
     if (this.collected) return false;
-    if (this.mesh.position.distanceTo(playerPos) < 1.5) {
+    const dist = this.mesh.position.distanceTo(playerPos);
+    if (dist < 1.5) {
       this.collected = true;
       this.mesh.visible = false;
       return true;
@@ -59,5 +86,7 @@ export class Collectible {
     return false;
   }
 
-  destroy(): void { this.mesh.parent?.remove(this.mesh); }
+  destroy(): void {
+    this.mesh.parent?.remove(this.mesh);
+  }
 }

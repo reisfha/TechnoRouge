@@ -3,16 +3,24 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
+  "main": "electron/main.js",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "electron:dev": "concurrently \"vite\" \"wait-on http://localhost:5173 && electron .\"",
+    "electron:build": "npm run build && electron-builder --win"
   },
   "dependencies": {
-    "phaser": "^3"
+    "three": "^0.185.1"
   },
   "devDependencies": {
+    "@types/three": "^0.185.0",
+    "concurrently": "^10.0.3",
+    "electron": "^31.6.0",
+    "electron-builder": "^24.13.3",
     "typescript": "^5.9.3",
-    "vite": "^5.4.21"
+    "vite": "^5.4.21",
+    "wait-on": "^9.0.10"
   }
 }
