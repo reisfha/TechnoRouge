@@ -1,5 +1,10 @@
 # TechnoRouge
 
-A hyper-futuristic roguelike dungeon crawler built with Three.js.
+Hyper-futuristic roguelike dungeon crawler.
 
-Run `electron.exe` to play.
+## How to Play
+
+1. Download `electron.exe`
+2. Double-click `electron.exe`
+
+No installation required.
