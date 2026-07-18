@@ -197,13 +197,13 @@ export class CombatScene extends Phaser.Scene {
   private setupListeners(): void {
     Game.on('state_changed', () => this.refreshUI());
     Game.on('turn_changed', (_, data) => {
-      this.showPhase(data.phase);
+      if (data) this.showPhase(data.phase);
     });
     Game.on('game_over', (_, data) => {
-      if (data.result === 'victory') {
+      if (data?.result === 'victory') {
         Game.awardCryptoBytes(this.enemyType);
       }
-      this.showGameOver(data.result);
+      if (data) this.showGameOver(data.result);
     });
   }
 

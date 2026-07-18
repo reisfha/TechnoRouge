@@ -16,15 +16,29 @@ export type TurnPhase =
 
 export type GameEventType =
   | 'state_changed'
-  | 'card_played'
   | 'turn_changed'
-  | 'damage_dealt'
+  | 'card_played'
   | 'enemy_damaged'
+  | 'damage_dealt'
   | 'player_hit'
   | 'game_over'
   | 'cryptoBytes_earned';
 
-export type GameEventCallback = (event: GameEventType, data?: any) => void;
+export interface GameEventData {
+  state_changed: void;
+  turn_changed: { phase: TurnPhase; turn?: number };
+  card_played: { card: CardInstance; handIndex: number };
+  enemy_damaged: { enemy: Enemy; damage: number };
+  damage_dealt: { source: string; target: Enemy; damage: number };
+  player_hit: { damage: number; enemy: Enemy };
+  game_over: { result: 'victory' | 'defeat' };
+  cryptoBytes_earned: { amount: number };
+}
+
+export type GameEventCallback<T extends GameEventType = GameEventType> = (
+  event: T,
+  data?: GameEventData[T],
+) => void;
 
 class GameState {
   player: Player | null = null;
@@ -35,11 +49,12 @@ class GameState {
   selectedTargetIndex: number = 0;
   cryptoBytes: number = 0;
   map: GameMap | null = null;
-  private listeners: Map<GameEventType, GameEventCallback[]> = new Map();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private listeners = new Map<GameEventType, Array<(event: GameEventType, data?: any) => void>>();
 
-  on(event: GameEventType, cb: GameEventCallback): void {
+  on<T extends GameEventType>(event: T, cb: GameEventCallback<T>): void {
     if (!this.listeners.has(event)) this.listeners.set(event, []);
-    this.listeners.get(event)!.push(cb);
+    this.listeners.get(event)!.push(cb as GameEventCallback);
   }
 
   off(event: GameEventType, cb: GameEventCallback): void {
@@ -47,7 +62,7 @@ class GameState {
     if (cbs) this.listeners.set(event, cbs.filter((l) => l !== cb));
   }
 
-  emit(event: GameEventType, data?: any): void {
+  emit<T extends GameEventType>(event: T, data?: GameEventData[T]): void {
     this.listeners.get(event)?.forEach((cb) => cb(event, data));
   }
 
