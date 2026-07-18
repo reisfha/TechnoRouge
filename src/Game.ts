@@ -5,6 +5,7 @@ import { CardEffect, TargetType } from './data/cards';
 import { getEnemyDef } from './data/enemies';
 import { CLASS_DEFINITIONS, ClassDefinition } from './data/classes';
 import { shuffleArray } from './utils/helpers';
+import { GameMap, generateMap } from './data/map';
 
 export type TurnPhase =
   | 'init'
@@ -20,7 +21,8 @@ export type GameEventType =
   | 'damage_dealt'
   | 'enemy_damaged'
   | 'player_hit'
-  | 'game_over';
+  | 'game_over'
+  | 'cryptoBytes_earned';
 
 export type GameEventCallback = (event: GameEventType, data?: any) => void;
 
@@ -31,6 +33,8 @@ class GameState {
   turnNumber: number = 0;
   classDef: ClassDefinition | null = null;
   selectedTargetIndex: number = 0;
+  cryptoBytes: number = 0;
+  map: GameMap | null = null;
   private listeners: Map<GameEventType, GameEventCallback[]> = new Map();
 
   on(event: GameEventType, cb: GameEventCallback): void {
@@ -54,15 +58,40 @@ class GameState {
     this.player = new Player(classDef.maxHp, classDef.maxEnergy, classDef.starterDeck);
     this.turnNumber = 0;
     this.phase = 'init';
-    this.spawnEnemies();
+    this.cryptoBytes = 0;
+    this.map = null;
     this.emit('state_changed');
   }
 
-  spawnEnemies(): void {
-    const pool = ['patrol_ice', 'firewall_daemon', 'corrupted_node', 'data_vampire'];
-    const count = 1 + Math.floor(Math.random() * 2);
+  generateMap(act: number = 1): GameMap {
+    this.map = generateMap(act);
+    return this.map;
+  }
+
+  spawnEnemies(type: 'combat' | 'elite' | 'boss' = 'combat'): void {
+    let pool: string[];
+    if (type === 'boss') {
+      pool = ['system_guardian'];
+    } else if (type === 'elite') {
+      pool = ['firewall_daemon', 'data_vampire', 'system_guardian'];
+    } else {
+      pool = ['patrol_ice', 'firewall_daemon', 'corrupted_node', 'data_vampire'];
+    }
+    const count = type === 'boss' ? 1 : type === 'elite' ? 1 : 1 + Math.floor(Math.random() * 2);
     const shuffled = shuffleArray(pool);
     this.enemies = shuffled.slice(0, count).map((id) => new Enemy(getEnemyDef(id)));
+  }
+
+  awardCryptoBytes(type: 'combat' | 'elite' | 'boss'): void {
+    const base = type === 'boss' ? 75 : type === 'elite' ? 25 : 10;
+    const floorBonus = this.map?.currentNodeId
+      ? (this.map.layers.findIndex((l) =>
+          l.nodes.some((n) => n.id === this.map!.currentNodeId)
+        ) || 0)
+      : 0;
+    const total = base + floorBonus;
+    this.cryptoBytes += total;
+    this.emit('cryptoBytes_earned', { amount: total });
   }
 
   startCombat(): void {
