@@ -1,10 +1,12 @@
 import './styles/cards.css';
 import './styles/hud.css';
 import './styles/menus.css';
+import './styles/map.css';
 
 import Phaser from 'phaser';
 import { BootScene } from './scenes/BootScene';
 import { MenuScene } from './scenes/MenuScene';
+import { MapScene } from './scenes/MapScene';
 import { CombatScene } from './scenes/CombatScene';
 
 const config: Phaser.Types.Core.GameConfig = {
@@ -17,7 +19,7 @@ const config: Phaser.Types.Core.GameConfig = {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
   },
-  scene: [BootScene, MenuScene, CombatScene],
+  scene: [BootScene, MenuScene, MapScene, CombatScene],
   input: {
     keyboard: true,
     touch: true,

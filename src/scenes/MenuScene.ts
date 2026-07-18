@@ -64,6 +64,6 @@ export class MenuScene extends Phaser.Scene {
     const overlay = document.getElementById('ui-overlay') as HTMLElement;
     overlay.innerHTML = '';
 
-    this.scene.start('CombatScene', { className });
+    this.scene.start('MapScene', { className });
   }
 }

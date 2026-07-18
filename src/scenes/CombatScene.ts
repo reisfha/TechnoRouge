@@ -15,13 +15,18 @@ export class CombatScene extends Phaser.Scene {
   private resultSubtitle!: HTMLElement;
   private graphics!: Phaser.GameObjects.Graphics;
   private gridLines!: Phaser.GameObjects.Graphics;
+  private fromMap: boolean = false;
+  private enemyType: 'combat' | 'elite' | 'boss' = 'combat';
 
   constructor() {
     super({ key: 'CombatScene' });
   }
 
-  init(data: { className: string }): void {
+  init(data: { className: string; enemyType?: string; fromMap?: boolean }): void {
+    this.fromMap = data.fromMap ?? false;
+    this.enemyType = (data.enemyType as 'combat' | 'elite' | 'boss') ?? 'combat';
     Game.startRun(data.className);
+    Game.spawnEnemies(this.enemyType);
   }
 
   create(): void {
@@ -195,6 +200,9 @@ export class CombatScene extends Phaser.Scene {
       this.showPhase(data.phase);
     });
     Game.on('game_over', (_, data) => {
+      if (data.result === 'victory') {
+        Game.awardCryptoBytes(this.enemyType);
+      }
       this.showGameOver(data.result);
     });
   }
@@ -254,10 +262,32 @@ export class CombatScene extends Phaser.Scene {
       this.resultTitle.textContent = 'SYSTEM BREACHED';
       this.resultSubtitle.textContent = 'You cracked the mainframe.';
       this.resultTitle.style.color = '#44ff66';
+
+      if (this.fromMap) {
+        const gameOverBox = this.gameOverOverlay.querySelector('.game-over-box') as HTMLElement;
+        let continueBtn = document.getElementById('continue-btn');
+        if (!continueBtn) {
+          continueBtn = document.createElement('button');
+          continueBtn.id = 'continue-btn';
+          continueBtn.className = 'neon-btn large';
+          continueBtn.textContent = 'CONTINUE';
+          gameOverBox.insertBefore(continueBtn, gameOverBox.children[1]);
+        }
+        continueBtn.style.display = '';
+        continueBtn.onclick = () => {
+          this.gameOverOverlay.classList.remove('visible');
+          this.gameOverOverlay.classList.add('hidden');
+          this.handDisplay.clear();
+          this.scene.start('MapScene');
+        };
+      }
     } else {
       this.resultTitle.textContent = 'JACKED OUT';
       this.resultSubtitle.textContent = 'The system was too strong.';
       this.resultTitle.style.color = '#ff4455';
+
+      const continueBtn = document.getElementById('continue-btn');
+      if (continueBtn) continueBtn.style.display = 'none';
     }
   }
 
