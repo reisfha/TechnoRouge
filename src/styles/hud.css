@@ -178,6 +178,22 @@
   border-color: var(--enemy-color);
 }
 
+.enemy-card.selected {
+  border-color: var(--enemy-color);
+  box-shadow: 0 0 15px color-mix(in srgb, var(--enemy-color) 50%, transparent),
+              inset 0 0 15px color-mix(in srgb, var(--enemy-color) 10%, transparent);
+}
+
+.enemy-card.selected .enemy-name {
+  color: var(--enemy-color);
+  text-shadow: 0 0 8px var(--enemy-color);
+}
+
+.enemy-card.dead {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
 .enemy-name {
   font-family: 'Courier New', monospace;
   font-size: 13px;

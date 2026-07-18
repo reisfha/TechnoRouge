@@ -7,10 +7,6 @@ export function shuffleArray<T>(array: T[]): T[] {
   return arr;
 }
 
-export function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
-}
-
 export function generateId(): string {
   return Math.random().toString(36).substring(2, 9);
 }

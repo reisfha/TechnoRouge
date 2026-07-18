@@ -1,5 +1,6 @@
-import { ActiveEffect, createEffect } from './Effect';
+import { ActiveEffect } from './Effect';
 import { EnemyDefinition, EnemyIntent } from '../data/enemies';
+import { EffectSystem } from '../systems/EffectSystem';
 
 export class Enemy {
   def: EnemyDefinition;
@@ -31,32 +32,19 @@ export class Enemy {
   }
 
   getEffectStacks(name: string): number {
-    const effect = this.effects.find((e) => e.name === name);
-    return effect ? effect.stacks : 0;
+    return EffectSystem.getStacks(this.effects, name);
   }
 
   addEffect(name: string, type: 'buff' | 'debuff', stacks: number, duration: number): void {
-    const existing = this.effects.find((e) => e.name === name);
-    if (existing) {
-      existing.stacks += stacks;
-      if (duration > existing.turnsRemaining) {
-        existing.turnsRemaining = duration;
-      }
-    } else {
-      this.effects.push(createEffect(name, type, stacks, duration));
-    }
+    this.effects = EffectSystem.addEffect(this.effects, name, type, stacks, duration);
   }
 
   tickEffects(): void {
-    this.effects = this.effects.filter((e) => {
-      e.turnsRemaining--;
-      return e.turnsRemaining > 0 && e.stacks > 0;
-    });
+    this.effects = EffectSystem.tickEffects(this.effects);
   }
 
   applyStatusDamage(): number {
-    const poisonStacks = this.getEffectStacks('poison');
-    return poisonStacks;
+    return this.getEffectStacks('poison');
   }
 
   chooseIntent(): EnemyIntent {

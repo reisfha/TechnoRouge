@@ -18,17 +18,28 @@ const INTENT_ICONS: Record<string, string> = {
 
 export class EnemyDisplay {
   private container: HTMLElement;
+  private onSelectEnemy: ((index: number) => void) | null = null;
 
   constructor(containerId: string = 'enemy-container') {
     this.container = document.getElementById(containerId) as HTMLElement;
   }
 
-  render(enemies: Enemy[]): void {
+  setOnSelectEnemy(cb: (index: number) => void): void {
+    this.onSelectEnemy = cb;
+  }
+
+  render(enemies: Enemy[], selectedIndex: number = 0): void {
     this.container.innerHTML = '';
 
-    for (const enemy of enemies) {
+    enemies.forEach((enemy, index) => {
       const el = document.createElement('div');
       el.className = 'enemy-card';
+      if (index === selectedIndex && enemy.isAlive) {
+        el.classList.add('selected');
+      }
+      if (!enemy.isAlive) {
+        el.classList.add('dead');
+      }
       el.id = `enemy-${enemy.def.id}`;
 
       const hpPercent = (enemy.hp / enemy.maxHp) * 100;
@@ -71,8 +82,14 @@ export class EnemyDisplay {
         <div class="enemy-effects">${effectsHtml}</div>
       `;
 
+      el.addEventListener('click', () => {
+        if (enemy.isAlive && this.onSelectEnemy) {
+          this.onSelectEnemy(index);
+        }
+      });
+
       this.container.appendChild(el);
-    }
+    });
   }
 
   clear(): void {

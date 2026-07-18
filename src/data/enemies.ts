@@ -13,7 +13,6 @@ export interface EnemyDefinition {
   minHp: number;
   intents: EnemyIntent[];
   intentCount: number;
-  artifact?: string;
 }
 
 export const ENEMY_DEFINITIONS: EnemyDefinition[] = [

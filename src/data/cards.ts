@@ -3,7 +3,7 @@ export type TargetType = 'enemy' | 'self' | 'all_enemies' | 'all';
 export type Rarity = 'basic' | 'common' | 'uncommon' | 'rare';
 
 export interface CardEffect {
-  type: 'damage' | 'block' | 'apply_effect' | 'gain_energy' | 'heal' | 'draw' | 'aoe_damage';
+  type: 'damage' | 'block' | 'apply_effect' | 'gain_energy' | 'heal' | 'draw' | 'aoe_damage' | 'draw_from_discard';
   value?: number;
   effectType?: string;
   duration?: number;
@@ -19,6 +19,7 @@ export interface CardDefinition {
   description: string;
   rarity: Rarity;
   effects: CardEffect[];
+  exhaust?: boolean;
 }
 
 export const CARD_DEFINITIONS: CardDefinition[] = [
@@ -139,7 +140,7 @@ export const CARD_DEFINITIONS: CardDefinition[] = [
     target: 'self',
     description: 'Shuffle 2 random cards from discard into your hand.',
     rarity: 'uncommon',
-    effects: [{ type: 'draw', value: 2 }],
+    effects: [{ type: 'draw_from_discard', value: 2 }],
   },
   {
     id: 'neural_blitz',

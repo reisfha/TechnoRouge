@@ -1,8 +1,8 @@
-import { ActiveEffect, createEffect } from './Effect';
+import { ActiveEffect } from './Effect';
 import { CardInstance } from './Card';
-import { CardDefinition, CardEffect } from '../data/cards';
 import { getCardDef } from '../data/cards';
-import { shuffleArray } from '../utils/helpers';
+import { DeckSystem } from '../systems/DeckSystem';
+import { EffectSystem } from '../systems/EffectSystem';
 
 export class Player {
   maxHp: number;
@@ -19,6 +19,8 @@ export class Player {
   effects: ActiveEffect[];
   strength: number;
 
+  static readonly MAX_HAND_SIZE = 10;
+
   constructor(maxHp: number, maxEnergy: number, starterDeckIds: string[]) {
     this.maxHp = maxHp;
     this.hp = maxHp;
@@ -34,7 +36,7 @@ export class Player {
     this.exhaustPile = [];
 
     const deck = starterDeckIds.map((id) => new CardInstance(getCardDef(id)));
-    this.drawPile = shuffleArray(deck);
+    this.drawPile = DeckSystem.shuffleDeck(deck);
   }
 
   get isAlive(): boolean {
@@ -46,51 +48,37 @@ export class Player {
   }
 
   getEffectStacks(name: string): number {
-    const effect = this.effects.find((e) => e.name === name);
-    return effect ? effect.stacks : 0;
+    return EffectSystem.getStacks(this.effects, name);
   }
 
   addEffect(name: string, type: 'buff' | 'debuff', stacks: number, duration: number): void {
-    const existing = this.effects.find((e) => e.name === name);
-    if (existing) {
-      existing.stacks += stacks;
-      if (duration > existing.turnsRemaining) {
-        existing.turnsRemaining = duration;
-      }
-    } else {
-      this.effects.push(createEffect(name, type, stacks, duration));
-    }
+    this.effects = EffectSystem.addEffect(this.effects, name, type, stacks, duration);
   }
 
   removeEffect(name: string): void {
-    this.effects = this.effects.filter((e) => e.name !== name);
+    this.effects = EffectSystem.removeEffect(this.effects, name);
   }
 
   tickEffects(): void {
-    this.effects = this.effects.filter((e) => {
-      e.turnsRemaining--;
-      return e.turnsRemaining > 0 && e.stacks > 0;
-    });
+    this.effects = EffectSystem.tickEffects(this.effects);
   }
 
   applyStatusDamage(): number {
-    const poisonStacks = this.getEffectStacks('poison');
-    return poisonStacks;
+    return this.getEffectStacks('poison');
   }
 
   drawCards(count: number): CardInstance[] {
+    return DeckSystem.drawCards(this.drawPile, this.hand, this.discardPile, count);
+  }
+
+  drawFromDiscard(count: number): CardInstance[] {
     const drawn: CardInstance[] = [];
     for (let i = 0; i < count; i++) {
-      if (this.drawPile.length === 0) {
-        if (this.discardPile.length === 0) break;
-        this.drawPile = shuffleArray(this.discardPile);
-        this.discardPile = [];
-      }
-      const card = this.drawPile.pop();
-      if (card) {
-        this.hand.push(card);
-        drawn.push(card);
-      }
+      if (this.discardPile.length === 0) break;
+      const randomIndex = Math.floor(Math.random() * this.discardPile.length);
+      const card = this.discardPile.splice(randomIndex, 1)[0];
+      this.hand.push(card);
+      drawn.push(card);
     }
     return drawn;
   }
@@ -105,8 +93,21 @@ export class Player {
   }
 
   discardHand(): void {
-    this.discardPile.push(...this.hand);
-    this.hand = [];
+    DeckSystem.discardHand(this.hand, this.discardPile);
+  }
+
+  discardToHandSize(): void {
+    while (this.hand.length > Player.MAX_HAND_SIZE) {
+      const card = this.hand.pop()!;
+      this.discardPile.push(card);
+    }
+  }
+
+  exhaustCard(handIndex: number): CardInstance | null {
+    if (handIndex < 0 || handIndex >= this.hand.length) return null;
+    const card = this.hand.splice(handIndex, 1)[0];
+    this.exhaustPile.push(card);
+    return card;
   }
 
   gainBlock(amount: number): void {
@@ -132,6 +133,7 @@ export class Player {
   startNewTurn(): void {
     this.energy = this.maxEnergy;
     this.drawCards(5);
+    this.discardToHandSize();
   }
 
   die(): void {

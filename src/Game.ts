@@ -30,6 +30,7 @@ class GameState {
   phase: TurnPhase = 'init';
   turnNumber: number = 0;
   classDef: ClassDefinition | null = null;
+  selectedTargetIndex: number = 0;
   private listeners: Map<GameEventType, GameEventCallback[]> = new Map();
 
   on(event: GameEventType, cb: GameEventCallback): void {
@@ -85,12 +86,16 @@ class GameState {
 
     this.resolveCardEffects(card);
 
-    this.player.discardPile.push(card);
+    if (card.def.exhaust) {
+      this.player.exhaustPile.push(card);
+    } else {
+      this.player.discardPile.push(card);
+    }
     this.emit('card_played', { card, handIndex });
     this.emit('state_changed');
 
     this.checkEnemyDeath();
-    if (this.phase === 'victory') return true;
+    if (this.phase !== 'player_turn') return true;
 
     return true;
   }
@@ -121,11 +126,15 @@ class GameState {
           for (const enemy of this.enemies) {
             const actualDmg = enemy.takeDamage(dmg);
             this.emit('enemy_damaged', { enemy, damage: actualDmg });
+            this.emit('damage_dealt', { source: 'player', target: enemy, damage: actualDmg });
           }
-        } else if (this.enemies.length > 0) {
-          const enemyTarget = this.enemies[0];
-          const actualDmg = enemyTarget.takeDamage(dmg);
-          this.emit('enemy_damaged', { enemy: enemyTarget, damage: actualDmg });
+        } else {
+          const enemyTarget = this.getSelectedEnemy();
+          if (enemyTarget) {
+            const actualDmg = enemyTarget.takeDamage(dmg);
+            this.emit('enemy_damaged', { enemy: enemyTarget, damage: actualDmg });
+            this.emit('damage_dealt', { source: 'player', target: enemyTarget, damage: actualDmg });
+          }
         }
         break;
       }
@@ -139,6 +148,7 @@ class GameState {
         for (const enemy of this.enemies) {
           const actualDmg = enemy.takeDamage(dmg);
           this.emit('enemy_damaged', { enemy, damage: actualDmg });
+          this.emit('damage_dealt', { source: 'player', target: enemy, damage: actualDmg });
         }
         break;
       }
@@ -159,6 +169,10 @@ class GameState {
         player.drawCards(effect.value ?? 1);
         break;
       }
+      case 'draw_from_discard': {
+        player.drawFromDiscard(effect.value ?? 1);
+        break;
+      }
       case 'heal': {
         player.heal(effect.value ?? 0);
         break;
@@ -171,8 +185,9 @@ class GameState {
             enemy.addEffect(effect.effectType ?? 'debuff', 'debuff', effect.value ?? 1, effect.duration ?? 3);
           }
         } else {
-          if (this.enemies.length > 0) {
-            this.enemies[0].addEffect(effect.effectType ?? 'debuff', 'debuff', effect.value ?? 1, effect.duration ?? 3);
+          const enemyTarget = this.getSelectedEnemy();
+          if (enemyTarget) {
+            enemyTarget.addEffect(effect.effectType ?? 'debuff', 'debuff', effect.value ?? 1, effect.duration ?? 3);
           }
         }
         break;
@@ -283,6 +298,22 @@ class GameState {
     if (!this.player || this.phase !== 'player_turn') return false;
     if (handIndex < 0 || handIndex >= this.player.hand.length) return false;
     return this.player.energy >= this.player.hand[handIndex].cost;
+  }
+
+  setTarget(index: number): void {
+    if (index >= 0 && index < this.enemies.length && this.enemies[index].isAlive) {
+      this.selectedTargetIndex = index;
+      this.emit('state_changed');
+    }
+  }
+
+  getSelectedEnemy(): Enemy | null {
+    if (this.enemies.length === 0) return null;
+    if (this.selectedTargetIndex >= this.enemies.length) {
+      this.selectedTargetIndex = 0;
+    }
+    const enemy = this.enemies[this.selectedTargetIndex];
+    return enemy.isAlive ? enemy : null;
   }
 }
 

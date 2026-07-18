@@ -137,6 +137,10 @@ export class CombatScene extends Phaser.Scene {
     this.playerHUD = new PlayerHUD();
     this.enemyDisplay = new EnemyDisplay('enemy-container');
 
+    this.enemyDisplay.setOnSelectEnemy((index: number) => {
+      Game.setTarget(index);
+    });
+
     this.endTurnBtn = document.getElementById('end-turn-btn') as HTMLButtonElement;
     this.phaseOverlay = document.getElementById('phase-overlay') as HTMLElement;
     this.gameOverOverlay = document.getElementById('game-over-overlay') as HTMLElement;
@@ -176,6 +180,12 @@ export class CombatScene extends Phaser.Scene {
       if (key === 'e' || key === 'E') {
         Game.endPlayerTurn();
       }
+
+      // Enemy selection: keys 1-4 select enemy target
+      const enemyNum = parseInt(key);
+      if (enemyNum >= 1 && enemyNum <= 4) {
+        Game.setTarget(enemyNum - 1);
+      }
     });
   }
 
@@ -194,7 +204,7 @@ export class CombatScene extends Phaser.Scene {
 
     this.playerHUD.update(Game.player);
 
-    this.enemyDisplay.render(Game.enemies);
+    this.enemyDisplay.render(Game.enemies, Game.selectedTargetIndex);
 
     const isPlayerTurn = Game.phase === 'player_turn';
     this.handDisplay.render(Game.player.hand, (i: number) => Game.canPlayCard(i));
