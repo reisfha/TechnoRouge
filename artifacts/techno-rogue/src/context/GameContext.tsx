@@ -6,6 +6,7 @@ import { getRandomEnemies, getNextIntent } from '../game/enemies';
 import { shuffle, calculateDamage, applyDamage, reduceStatusDurations } from '../game/combat';
 
 type Action =
+  | { type: 'GO_TO_CHARACTER_SELECT' }
   | { type: 'START_GAME'; payload: { playerClass: CharacterClass } }
   | { type: 'SELECT_NODE'; payload: { nodeId: string } }
   | { type: 'PLAY_CARD'; payload: { cardIndex: number; targetEnemyId?: string } }
@@ -31,6 +32,9 @@ const initialState: GameState = {
 
 function gameReducer(state: GameState, action: Action): GameState {
   switch (action.type) {
+    case 'GO_TO_CHARACTER_SELECT':
+      return { ...state, screen: 'characterSelect' };
+
     case 'START_GAME': {
       const baseHp = action.payload.playerClass === 'STREET_SAMURAI' ? 90 : action.payload.playerClass === 'CORPORATE_FIXER' ? 80 : 70;
       return {
