@@ -29,7 +29,7 @@ export const TitleScreen: React.FC = () => {
           <Button 
             size="lg"
             className="text-lg px-12 py-6 rounded-none border border-primary bg-primary/10 hover:bg-primary hover:text-primary-foreground transition-all duration-300 neon-shadow"
-            onClick={() => dispatch({ type: 'START_GAME', payload: { playerClass: 'NETRUNNER' } })}
+            onClick={() => dispatch({ type: 'GO_TO_CHARACTER_SELECT' })}
           >
             INITIALIZE RUN
           </Button>
