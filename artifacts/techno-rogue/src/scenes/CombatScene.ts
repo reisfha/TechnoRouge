@@ -22,10 +22,12 @@ export class CombatScene extends Phaser.Scene {
     super({ key: 'CombatScene' });
   }
 
-  init(data: { className: string; enemyType?: string; fromMap?: boolean }): void {
+  init(data: { className?: string; enemyType?: string; fromMap?: boolean }): void {
     this.fromMap = data.fromMap ?? false;
     this.enemyType = (data.enemyType as 'combat' | 'elite' | 'boss') ?? 'combat';
-    Game.startRun(data.className);
+    if (data.className) {
+      Game.startRun(data.className);
+    }
     Game.spawnEnemies(this.enemyType);
   }
 
