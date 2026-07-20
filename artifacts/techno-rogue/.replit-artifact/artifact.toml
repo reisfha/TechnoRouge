@@ -1,0 +1,27 @@
+kind = "web"
+previewPath = "/"
+title = "TechnoRogue"
+version = "1.0.0"
+id = "artifacts/techno-rogue"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23537
+
+[services.development]
+run = "pnpm --filter @workspace/techno-rogue run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/techno-rogue", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/techno-rogue/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23537"
+BASE_PATH = "/"

@@ -1,0 +1,19 @@
+{
+  "name": "@workspace/techno-rogue",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --config vite.config.ts --host 0.0.0.0",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "phaser": "^3"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.3",
+    "vite": "catalog:"
+  }
+}
