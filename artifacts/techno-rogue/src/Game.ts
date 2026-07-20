@@ -300,6 +300,8 @@ class GameState {
 
   private endEnemyTurn(): void {
     if (!this.player) return;
+    // Don't start next turn if combat already ended
+    if (this.phase === 'defeat' || this.phase === 'victory') return;
 
     this.player.resetBlock();
     for (const enemy of this.enemies) {
