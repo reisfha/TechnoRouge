@@ -241,7 +241,10 @@ class GameState {
 
     for (const enemy of this.enemies) {
       if (!enemy.isAlive) continue;
-      const intent = enemy.chooseIntent();
+      // The intent was already chosen at combat start (or end of previous enemy
+      // turn) so the UI shows the correct action before it executes. If it
+      // isn't set for any reason, fall back to choosing one now.
+      const intent = enemy.currentIntent ?? enemy.chooseIntent();
 
       switch (intent.type) {
         case 'attack': {
@@ -271,6 +274,9 @@ class GameState {
           break;
         }
       }
+
+      // Choose the next intent so the UI shows it during the upcoming player turn
+      if (enemy.isAlive) enemy.chooseIntent();
     }
 
     this.applyEndOfTurnEffects();
