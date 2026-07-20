@@ -1,0 +1,169 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #0a0a0f;
+  font-family: 'Courier New', monospace;
+}
+
+#game-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+#ui-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+
+#ui-overlay > * {
+  pointer-events: all;
+}
+
+.menu-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 30px;
+  padding: 20px;
+  pointer-events: all;
+}
+
+.menu-title {
+  text-align: center;
+}
+
+.game-title {
+  font-family: 'Courier New', monospace;
+  font-size: 48px;
+  font-weight: bold;
+  color: #44ddff;
+  text-shadow: 0 0 20px #44ddff60, 0 0 40px #44ddff30, 0 0 80px #44ddff10;
+  letter-spacing: 6px;
+  margin-bottom: 8px;
+}
+
+.game-subtitle {
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  color: #6688aa;
+  letter-spacing: 4px;
+}
+
+.class-select {
+  width: 100%;
+  max-width: 800px;
+}
+
+.select-title {
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  color: #666;
+  text-align: center;
+  letter-spacing: 3px;
+  margin-bottom: 16px;
+}
+
+.class-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.class-card {
+  --class-color: #44aaff;
+
+  background: rgba(15, 15, 30, 0.9);
+  border: 2px solid #2a2a4e;
+  border-radius: 10px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  backdrop-filter: blur(4px);
+}
+
+.class-card:hover,
+.class-card.hovered {
+  border-color: var(--class-color);
+  box-shadow: 0 0 20px color-mix(in srgb, var(--class-color) 30%, transparent), inset 0 0 20px color-mix(in srgb, var(--class-color) 10%, transparent);
+  transform: translateY(-4px);
+}
+
+.class-number {
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  color: #555;
+  letter-spacing: 1px;
+}
+
+.class-name {
+  font-family: 'Courier New', monospace;
+  font-size: 16px;
+  font-weight: bold;
+  color: #fff;
+  letter-spacing: 1px;
+}
+
+.class-hp,
+.class-energy {
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  color: #888;
+}
+
+.class-desc {
+  font-family: 'Courier New', monospace;
+  font-size: 10px;
+  color: #666;
+  line-height: 1.3;
+  margin-top: 4px;
+}
+
+.class-deck-preview {
+  font-family: 'Courier New', monospace;
+  font-size: 10px;
+  color: #555;
+  margin-top: auto;
+  padding-top: 6px;
+  border-top: 1px solid #2a2a3e;
+}
+
+.menu-footer {
+  font-family: 'Courier New', monospace;
+  font-size: 10px;
+  color: #444;
+  letter-spacing: 1px;
+}
+
+@media (max-width: 600px) {
+  .class-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .game-title {
+    font-size: 32px;
+    letter-spacing: 4px;
+  }
+}
