@@ -105,6 +105,10 @@ class GameState {
   }
 
   startCombat(): void {
+    // Pre-set enemy intents so they display on turn 1 before the player acts
+    for (const enemy of this.enemies) {
+      enemy.chooseIntent();
+    }
     this.startPlayerTurn();
   }
 

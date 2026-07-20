@@ -33,7 +33,10 @@ const RARITY_BORDER: Record<string, string> = {
 };
 
 export class CardWidget {
+  /** The outer wrapper — handles arc rotation, pointer-events: none */
   element: HTMLDivElement;
+  /** The inner visual card — handles hover scaling, pointer-events: all */
+  private inner: HTMLDivElement;
   private card: CardInstance;
   private onClick: (() => void) | null = null;
   private index: number;
@@ -41,10 +44,25 @@ export class CardWidget {
   constructor(card: CardInstance, index: number) {
     this.card = card;
     this.index = index;
+
+    // Outer wrapper: arc positioning only — never receives pointer events
     this.element = document.createElement('div');
-    this.element.className = 'card';
+    this.element.className = 'card-wrapper';
     this.element.dataset.index = String(index);
+
+    // Inner card: visual element — receives pointer events and scales on hover
+    this.inner = document.createElement('div');
+    this.inner.className = 'card';
+    this.element.appendChild(this.inner);
+
     this.render();
+
+    // Click is on the inner card so the stable wrapper can't interfere
+    this.inner.addEventListener('click', () => {
+      if (this.inner.classList.contains('playable') && this.onClick) {
+        this.onClick();
+      }
+    });
   }
 
   setIndex(index: number): void {
@@ -57,14 +75,15 @@ export class CardWidget {
   }
 
   setPlayable(playable: boolean): void {
-    this.element.classList.toggle('playable', playable);
-    this.element.classList.toggle('unplayable', !playable);
+    this.inner.classList.toggle('playable', playable);
+    this.inner.classList.toggle('unplayable', !playable);
   }
 
   setHighlight(highlight: boolean): void {
-    this.element.classList.toggle('highlight', highlight);
+    this.inner.classList.toggle('highlight', highlight);
   }
 
+  /** Arc rotation goes on the wrapper so hover transform-origin is independent */
   setArcTransform(rotation: number, _index: number, _total: number): void {
     this.element.style.setProperty('--card-rotation', `${rotation}deg`);
   }
@@ -75,11 +94,11 @@ export class CardWidget {
     const rarityGlow = RARITY_GLOW[this.card.def.rarity] || RARITY_GLOW.basic;
     const rarityBorder = RARITY_BORDER[this.card.def.rarity] || RARITY_BORDER.basic;
 
-    this.element.style.setProperty('--card-color', color);
-    this.element.style.setProperty('--rarity-glow', rarityGlow);
-    this.element.style.setProperty('--rarity-border', rarityBorder);
+    // CSS vars go on the inner card element
+    this.inner.style.setProperty('--card-color', color);
+    this.inner.style.setProperty('--rarity-glow', rarityGlow);
+    this.inner.style.setProperty('--rarity-border', rarityBorder);
 
-    // Art pattern: unique gradient per card type
     const artGradients: Record<string, string> = {
       code:     `radial-gradient(ellipse at 30% 40%, ${color}33 0%, transparent 70%), linear-gradient(135deg, #0a0a1a 0%, #1a0a2a 100%)`,
       firewall: `linear-gradient(135deg, #0a1a2a 0%, #0a2a3a 100%), radial-gradient(ellipse at 70% 30%, ${color}22 0%, transparent 60%)`,
@@ -90,7 +109,7 @@ export class CardWidget {
     };
     const artBg = artGradients[this.card.type] || artGradients.protocol;
 
-    this.element.innerHTML = `
+    this.inner.innerHTML = `
       <div class="card-cost">${this.card.cost}</div>
       <div class="card-name">${this.card.name}</div>
       <div class="card-art" style="background:${artBg}">
@@ -104,12 +123,6 @@ export class CardWidget {
       <div class="card-description">${this.card.description}</div>
       ${this.card.def.exhaust ? '<div class="card-exhaust-tag">EXHAUST</div>' : ''}
     `;
-
-    this.element.addEventListener('click', () => {
-      if (this.element.classList.contains('playable') && this.onClick) {
-        this.onClick();
-      }
-    });
   }
 
   private getArtSymbol(): string {

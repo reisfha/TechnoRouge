@@ -224,6 +224,7 @@ export default function CombatScreen() {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
+          style={styles.handScrollView}
           contentContainerStyle={styles.handScroll}
         >
           {player.hand.map((card, i) => {
@@ -465,6 +466,7 @@ const styles = StyleSheet.create({
   pileCount: { fontFamily: 'Courier New', fontSize: 16, fontWeight: 'bold', color: Colors.text },
   pileLabel: { fontFamily: 'Courier New', fontSize: 8, color: Colors.textDim, letterSpacing: 1 },
   handScroll: { paddingHorizontal: 4, gap: 8, alignItems: 'center' },
+  handScrollView: { flex: 1 },
 
   // Cards
   card: {
