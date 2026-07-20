@@ -1,0 +1,63 @@
+# TechnoRouge — Design Plan
+
+## Sumarry
+- An advanced game that is somewhat of a cross between slay the spire and a cyberpunk rpg
+
+## UI / Presentation
+- **Title/Login screen:** homebrew-style terminal with custom commands (replacing current class-select grid)
+- **Crosshair:** cyberpunk-style reticle (implemented)
+- **HUD:** HP, Block, Energy, Deck/Discard counts, enemy display (implemented)
+
+## Core Loop
+Explore a seamless open cyberpunk world → find new cards (glowing crystals) → build your deck → fight roaming enemies (proximity-triggered card battles).
+
+## World Structure
+- **Set map** — has different starting paths with a set path to take
+- **Scale: massive** — Several large maps for 10+ acts
+
+## Environments (Biomes)
+- Enemies/Elites
+- Unkown Areas
+- Data vaults (chests)
+- Shops/Terminal
+- Error 429 zones (rest areas to heal/upgrade cards)
+
+## Card Acquisition
+All of the below:
+1. **World pickups** — Sometimes found in data vaults
+2. **Enemy drops** — rewarded after defeating enemies in card combat
+3. **Shops / terminals** — spend Cryptobytes to buy cards
+
+## Currency
+- **Cryptobytes** — earned from quests and defeating enemies
+- Spent at shops/terminals to buy cards
+
+## Packages (Relics)
+- **Aquirement** - After defeating elites, found in data vaults, and bought at terminals
+- **Use** - properties that help the player but are unique in properties
+
+## Progression (Roguelike)
+- **Between runs:** only special milestone-unlock cards carry over
+- Everything else (deck, Cryptobytes, quest progress) resets per run
+- Milestones earned by achieving specific goals (defeat a boss, complete quest chains, explore X% of map, etc.)
+
+## Classes (redesign from scratch)
+5 archetypes:
+1. **Netrunner / Hacker** — bonus effects against status-afflicted enemies; can preview/modify enemy intents
+2. **Gunslinger / Merc** — double-hit cards, combo chains, weapon attachments that modify cards
+3. **Cyborg / Chrome** — self-damage for power, body mods giving permanent passives per run
+4. **Ripper / Doctor** — organic mods that grow over time; healing-to-damage conversions
+5. **Corporate Agent** — hire drones/turrets; spend Cryptobytes for on-demand effects
+
+## Enemies
+- **Normal roamers** — standard encounters, drop cards + Cryptobytes
+- **Elite enemies** — tougher, zone-specific, better rewards
+- **Bosses** — unique landmark fights, tied to milestones/story
+
+## Combat System Depth
+- **Medium complexity**
+  - Multiple statuses (weak, strength, fortify, poison, etc.)
+  - Buffs/debuffs with durations
+  - Card synergies and strategy
+  - Variable enemy intents (attack/defend/buff/debuff/status)
+  - X-cost cards, exhaust, ethereal, combo/synergy cards, card upgrades (candidate mechanics)
