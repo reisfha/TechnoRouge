@@ -45,6 +45,11 @@ export class CombatScene extends Phaser.Scene {
     this.setupInput();
     this.setupListeners();
 
+    // Ensure teardown runs on every scene stop/restart/destroy regardless of
+    // whether the subclass lifecycle hook is honored by the scene manager.
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, this._cleanup, this);
+    this.events.once(Phaser.Scenes.Events.DESTROY, this._cleanup, this);
+
     this.time.delayedCall(200, () => {
       Game.startCombat();
       this.refreshUI();
@@ -52,6 +57,11 @@ export class CombatScene extends Phaser.Scene {
   }
 
   shutdown(): void {
+    // Phaser lifecycle hook; also wired via events.once for safety.
+    this._cleanup();
+  }
+
+  private _cleanup(): void {
     // Remove all Game listeners to prevent stale callbacks
     if (this._onStateChanged)  Game.off('state_changed',   this._onStateChanged);
     if (this._onTurnChanged)   Game.off('turn_changed',    this._onTurnChanged);
