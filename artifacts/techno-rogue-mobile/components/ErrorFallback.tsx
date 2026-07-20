@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useColors } from '@/hooks/useColors';
+import { Colors } from '@/constants/colors';
 import { Feather } from '@expo/vector-icons';
 import { reloadAppAsync } from 'expo';
 
@@ -19,9 +19,7 @@ export type ErrorFallbackProps = {
 };
 
 export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
-  const colors = useColors();
   const insets = useSafeAreaInsets();
-
   const [isModalVisible, setIsModalVisible] = useState(false);
 
   const handleRestart = async () => {
@@ -48,7 +46,7 @@ export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
   });
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: Colors.bg }]}>
       {__DEV__ ? (
         <Pressable
           onPress={() => setIsModalVisible(true)}
@@ -58,21 +56,21 @@ export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
             styles.topButton,
             {
               top: insets.top + 16,
-              backgroundColor: colors.card,
+              backgroundColor: Colors.bgCard,
               opacity: pressed ? 0.8 : 1,
             },
           ]}
         >
-          <Feather name="alert-circle" size={20} color={colors.foreground} />
+          <Feather name="alert-circle" size={20} color={Colors.text} />
         </Pressable>
       ) : null}
 
       <View style={styles.content}>
-        <Text style={[styles.title, { color: colors.foreground }]}>
+        <Text style={[styles.title, { color: Colors.text }]}>
           Something went wrong
         </Text>
 
-        <Text style={[styles.message, { color: colors.mutedForeground }]}>
+        <Text style={[styles.message, { color: Colors.textDim }]}>
           Please reload the app to continue.
         </Text>
 
@@ -81,15 +79,13 @@ export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
           style={({ pressed }) => [
             styles.button,
             {
-              backgroundColor: colors.primary,
+              backgroundColor: Colors.cyan,
               opacity: pressed ? 0.9 : 1,
               transform: [{ scale: pressed ? 0.98 : 1 }],
             },
           ]}
         >
-          <Text
-            style={[styles.buttonText, { color: colors.primaryForeground }]}
-          >
+          <Text style={[styles.buttonText, { color: Colors.bg }]}>
             Try Again
           </Text>
         </Pressable>
@@ -106,16 +102,16 @@ export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
             <View
               style={[
                 styles.modalContainer,
-                { backgroundColor: colors.background },
+                { backgroundColor: Colors.bg },
               ]}
             >
               <View
                 style={[
                   styles.modalHeader,
-                  { borderBottomColor: colors.border },
+                  { borderBottomColor: Colors.border },
                 ]}
               >
-                <Text style={[styles.modalTitle, { color: colors.foreground }]}>
+                <Text style={[styles.modalTitle, { color: Colors.text }]}>
                   Error Details
                 </Text>
                 <Pressable
@@ -127,7 +123,7 @@ export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
                     { opacity: pressed ? 0.6 : 1 },
                   ]}
                 >
-                  <Feather name="x" size={24} color={colors.foreground} />
+                  <Feather name="x" size={24} color={Colors.text} />
                 </Pressable>
               </View>
 
@@ -142,14 +138,14 @@ export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
                 <View
                   style={[
                     styles.errorContainer,
-                    { backgroundColor: colors.card },
+                    { backgroundColor: Colors.bgCard },
                   ]}
                 >
                   <Text
                     style={[
                       styles.errorText,
                       {
-                        color: colors.foreground,
+                        color: Colors.text,
                         fontFamily: monoFont,
                       },
                     ]}
@@ -188,11 +184,13 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textAlign: 'center',
     lineHeight: 40,
+    fontFamily: 'Courier New',
   },
   message: {
     fontSize: 16,
     textAlign: 'center',
     lineHeight: 24,
+    fontFamily: 'Courier New',
   },
   topButton: {
     position: 'absolute',
@@ -211,10 +209,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     minWidth: 200,
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
@@ -223,6 +218,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'center',
     fontSize: 16,
+    fontFamily: 'Courier New',
   },
   modalOverlay: {
     flex: 1,
@@ -247,6 +243,7 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 20,
     fontWeight: '600',
+    fontFamily: 'Courier New',
   },
   closeButton: {
     width: 44,
@@ -254,12 +251,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  modalScrollView: {
-    flex: 1,
-  },
-  modalScrollContent: {
-    padding: 16,
-  },
+  modalScrollView: { flex: 1 },
+  modalScrollContent: { padding: 16 },
   errorContainer: {
     width: '100%',
     borderRadius: 8,

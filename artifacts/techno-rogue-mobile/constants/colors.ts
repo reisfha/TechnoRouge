@@ -54,7 +54,7 @@ export const NODE_ICONS: Record<string, string> = {
 
 export const CARD_TYPE_COLORS: Record<string, string> = {
   code: Colors.cyan,
-  firewall: Colors.blue,
+  firewall: Colors.cyan,
   daemon: Colors.purple,
   virus: Colors.green,
   ice: '#88ccff',
