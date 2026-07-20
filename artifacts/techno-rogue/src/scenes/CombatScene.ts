@@ -23,6 +23,7 @@ export class CombatScene extends Phaser.Scene {
   private _onGameOver!: (_: any, data: any) => void;
   private _onEnemyDamaged!: (_: any, data: any) => void;
   private _onPlayerHit!: () => void;
+  private _onKeyDown!: (event: KeyboardEvent) => void;
 
   constructor() {
     super({ key: 'CombatScene' });
@@ -52,11 +53,12 @@ export class CombatScene extends Phaser.Scene {
 
   shutdown(): void {
     // Remove all Game listeners to prevent stale callbacks
-    Game.off('state_changed',   this._onStateChanged);
-    Game.off('turn_changed',    this._onTurnChanged);
-    Game.off('game_over',       this._onGameOver);
-    Game.off('enemy_damaged',   this._onEnemyDamaged);
-    Game.off('player_hit',      this._onPlayerHit);
+    if (this._onStateChanged)  Game.off('state_changed',   this._onStateChanged);
+    if (this._onTurnChanged)   Game.off('turn_changed',    this._onTurnChanged);
+    if (this._onGameOver)      Game.off('game_over',       this._onGameOver);
+    if (this._onEnemyDamaged)  Game.off('enemy_damaged',   this._onEnemyDamaged);
+    if (this._onPlayerHit)     Game.off('player_hit',      this._onPlayerHit);
+    this.input.keyboard?.off('keydown', this._onKeyDown);
   }
 
   private drawBackground(): void {
@@ -166,8 +168,8 @@ export class CombatScene extends Phaser.Scene {
     this.resultSubtitle  = document.getElementById('result-subtitle') as HTMLElement;
     this.damageFlash     = document.getElementById('damage-flash') as HTMLElement;
 
-    document.getElementById('restart-btn')!.addEventListener('click', () => this.restart());
-    document.getElementById('menu-btn')!.addEventListener('click',    () => this.goToMenu());
+    document.getElementById('restart-btn')!.onclick = () => this.restart();
+    document.getElementById('menu-btn')!.onclick    = () => this.goToMenu();
   }
 
   private setupInput(): void {
@@ -175,11 +177,11 @@ export class CombatScene extends Phaser.Scene {
       if (Game.playCard(index)) this.refreshUI();
     });
 
-    this.endTurnBtn.addEventListener('click', () => {
+    this.endTurnBtn.onclick = () => {
       if (Game.phase === 'player_turn') Game.endPlayerTurn();
-    });
+    };
 
-    this.input.keyboard?.on('keydown', (event: KeyboardEvent) => {
+    this._onKeyDown = (event: KeyboardEvent) => {
       if (Game.phase !== 'player_turn') return;
       const key = event.key;
       if (key === 'e' || key === 'E') { Game.endPlayerTurn(); return; }
@@ -188,7 +190,8 @@ export class CombatScene extends Phaser.Scene {
         Game.playCard(num - 1);
         this.refreshUI();
       }
-    });
+    };
+    this.input.keyboard?.on('keydown', this._onKeyDown);
   }
 
   private setupListeners(): void {
