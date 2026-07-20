@@ -1,59 +1,63 @@
-/**
- * Semantic design tokens for the mobile app.
- *
- * These tokens mirror the naming conventions used in web artifacts (index.css)
- * so that multi-artifact projects share a cohesive visual identity.
- *
- * Replace the placeholder values below with values that match the project's
- * brand. If a sibling web artifact exists, read its index.css and convert the
- * HSL values to hex so both artifacts use the same palette.
- *
- * To add dark mode, add a `dark` key with the same token names.
- * The useColors() hook will automatically pick it up.
- */
+export const Colors = {
+  bg: '#0a0a0f',
+  bgCard: '#0f0f1a',
+  bgPanel: '#12121f',
+  border: '#1a1a3a',
+  borderBright: '#2a2a5a',
 
-const colors = {
-  light: {
-    // Legacy aliases (kept for backward compatibility)
-    text: '#0a0a0a',
-    tint: '#2f95dc',
+  cyan: '#44aaff',
+  cyanDim: '#1a4466',
+  cyanGlow: '#66ccff',
 
-    // Core surfaces
-    background: '#ffffff',
-    foreground: '#0a0a0a',
+  red: '#ff4455',
+  redDim: '#661a22',
 
-    // Cards / elevated surfaces
-    card: '#f9f9f9',
-    cardForeground: '#0a0a0a',
+  green: '#44ff88',
+  greenDim: '#1a6633',
 
-    // Primary action color (buttons, links, active states)
-    primary: '#2f95dc',
-    primaryForeground: '#ffffff',
+  yellow: '#ffcc44',
+  yellowDim: '#664e1a',
 
-    // Secondary / less-emphasis interactive surfaces
-    secondary: '#f0f0f0',
-    secondaryForeground: '#1a1a1a',
+  purple: '#aa44ff',
+  purpleDim: '#441a66',
 
-    // Muted / subdued elements (dividers, timestamps, placeholders)
-    muted: '#f0f0f0',
-    mutedForeground: '#737373',
+  text: '#e0e8ff',
+  textDim: '#6070a0',
+  textBright: '#ffffff',
 
-    // Accent highlights (badges, selected items, focus rings)
-    accent: '#f0f0f0',
-    accentForeground: '#1a1a1a',
-
-    // Destructive actions (delete, error states)
-    destructive: '#ef4444',
-    destructiveForeground: '#ffffff',
-
-    // Borders and input outlines
-    border: '#e5e5e5',
-    input: '#e5e5e5',
-  },
-
-  // Border radius (in px). Sync from the sibling web artifact's --radius
-  // CSS variable. This value applies to cards, buttons, inputs, and modals.
-  radius: 8,
+  hp: '#ff4455',
+  block: '#44aaff',
+  energy: '#ffcc44',
+  poison: '#44ff88',
+  weak: '#ffaa44',
+  vulnerable: '#ff6644',
+  strength: '#ff4488',
 };
 
-export default colors;
+export const NODE_COLORS: Record<string, string> = {
+  combat: Colors.red,
+  elite: Colors.purple,
+  boss: '#ff2200',
+  shop: Colors.yellow,
+  rest: Colors.green,
+  event: Colors.cyan,
+};
+
+export const NODE_ICONS: Record<string, string> = {
+  combat: '⚔',
+  elite: '☠',
+  boss: '💀',
+  shop: '🛒',
+  rest: '🛏',
+  event: '❓',
+};
+
+export const CARD_TYPE_COLORS: Record<string, string> = {
+  code: Colors.cyan,
+  firewall: Colors.blue,
+  daemon: Colors.purple,
+  virus: Colors.green,
+  ice: '#88ccff',
+  protocol: Colors.yellow,
+  blue: '#4488ff',
+};

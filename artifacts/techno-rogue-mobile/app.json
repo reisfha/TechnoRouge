@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "TechnoRogue Mobile",
-    "slug": "techno-rogue-mobile",
+    "name": "TechnoRouge",
+    "slug": "technorouge",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "techno-rogue-mobile",
+    "scheme": "technorouge",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
@@ -14,9 +14,12 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": false
+      "supportsTablet": false,
+      "bundleIdentifier": "com.technorouge.app"
     },
-    "android": {},
+    "android": {
+      "package": "com.technorouge.app"
+    },
     "web": {
       "favicon": "./assets/images/icon.png"
     },
