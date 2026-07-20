@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "V144yngnbC6lqtowQNTsR"
+uri = "file://artifacts/techno-rogue-mobile/assets/images/icon.png"
+type = "image"
+title = "TechnoRogue App Icon"

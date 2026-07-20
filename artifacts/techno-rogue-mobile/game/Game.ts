@@ -76,6 +76,7 @@ class GameState {
   }
 
   spawnEnemies(type: 'combat' | 'elite' | 'boss' = 'combat'): void {
+    this.phase = 'init';   // reset so combat.tsx always calls startCombat
     this.currentNodeType = type;
     let pool: string[];
     if (type === 'boss') {

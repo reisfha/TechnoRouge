@@ -65,18 +65,12 @@ export default function CombatScreen() {
     }
   }, [phase]);
 
-  // Start combat on mount
+  // Start combat whenever we land here without an active turn
   React.useEffect(() => {
-    if (game.phase === 'init' || game.phase === 'enemy_turn') return;
-    if (game.phase === 'player_turn') return;
-    game.startCombat();
-  }, []);
-
-  React.useEffect(() => {
-    if (!player && game.phase === 'init') {
+    if (game.phase !== 'player_turn' && game.phase !== 'enemy_turn') {
       game.startCombat();
     }
-  }, [player]);
+  }, []);
 
   if (!player) {
     return (
