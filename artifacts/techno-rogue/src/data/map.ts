@@ -20,101 +20,122 @@ export interface GameMap {
   act: number;
 }
 
-const NODE_WEIGHTS: Record<NodeType, number> = {
-  combat: 40,
-  elite: 10,
-  shop: 10,
-  rest: 10,
-  event: 15,
-  boss: 0,
+// Fixed 3-column layout (L=0, C=1, R=2) — each floor specifies exactly
+// which columns have nodes, creating deliberate branching paths.
+const COLUMN_PATTERN: number[][] = [
+  [1],       // floor  0: START  — single entry point
+  [0, 1, 2], // floor  1: branch into all three paths
+  [0, 2],    // floor  2: left & right diverge (no centre)
+  [0, 1, 2], // floor  3: all paths reconverge briefly
+  [0, 1],    // floor  4
+  [0, 2],    // floor  5
+  [1, 2],    // floor  6
+  [0, 1, 2], // floor  7: mid-act crossroads
+  [0, 2],    // floor  8
+  [0, 1],    // floor  9
+  [1, 2],    // floor 10
+  [0, 1, 2], // floor 11
+  [0, 2],    // floor 12
+  [1],       // floor 13: funnel toward boss
+  [1],       // floor 14: BOSS
+];
+
+const NODE_TYPES_BY_FLOOR: Record<number, NodeType> = {
+  0: 'combat',   // always start with a fight
+  14: 'boss',
 };
 
-function weightedRandomType(floor: number, totalFloors: number): NodeType {
-  if (floor === 0) return 'combat';
-  if (floor === totalFloors - 1) return 'boss';
+const WEIGHTS: Partial<Record<NodeType, number>> = {
+  combat: 45,
+  elite:  10,
+  shop:   10,
+  rest:   10,
+  event:  15,
+};
 
-  const weights = { ...NODE_WEIGHTS };
-  if (floor <= 3) weights.elite = 5;
-  if (floor >= totalFloors - 3) weights.rest += 5;
+function rollType(floor: number): NodeType {
+  if (NODE_TYPES_BY_FLOOR[floor] !== undefined) return NODE_TYPES_BY_FLOOR[floor];
 
-  const entries = Object.entries(weights).filter(([, w]) => w > 0);
-  const total = entries.reduce((sum, [, w]) => sum + w, 0);
+  const w = { ...WEIGHTS };
+  // Elites rarer early, more common late
+  if (floor <= 2)  w.elite = 5;
+  if (floor >= 11) w.elite = 18;
+  // Extra rest/shop before boss
+  if (floor === 13) return Math.random() > 0.5 ? 'rest' : 'shop';
+
+  const entries = Object.entries(w) as [NodeType, number][];
+  const total = entries.reduce((s, [, v]) => s + v, 0);
   let roll = Math.random() * total;
-
   for (const [type, weight] of entries) {
     roll -= weight;
-    if (roll <= 0) return type as NodeType;
+    if (roll <= 0) return type;
   }
   return 'combat';
 }
 
-function generateId(floor: number, col: number): string {
-  return `node_${floor}_${col}`;
+function id(floor: number, col: number): string {
+  return `n_${floor}_${col}`;
 }
 
 export function generateMap(act: number = 1): GameMap {
-  const floorsPerAct = 15;
-  const layers: MapLayer[] = [];
+  const layers: MapLayer[] = COLUMN_PATTERN.map((cols, floor) => ({
+    floor,
+    nodes: cols.map((col) => ({
+      id: id(floor, col),
+      type: rollType(floor),
+      floor,
+      column: col,
+      connections: [],
+      visited: false,
+    })),
+  }));
 
-  for (let floor = 0; floor < floorsPerAct; floor++) {
-    const nodeCount = floor === 0 ? 1 : floor === floorsPerAct - 1 ? 1 : 2 + Math.floor(Math.random() * 2);
-    const nodes: MapNode[] = [];
+  // Build connections: each node at column C connects to next-floor nodes
+  // at columns within 1 step of C.  We guarantee every next-floor node
+  // receives at least one incoming edge.
+  for (let f = 0; f < layers.length - 1; f++) {
+    const cur  = layers[f];
+    const next = layers[f + 1];
+    const nextCols = next.nodes.map((n) => n.column);
 
-    for (let col = 0; col < nodeCount; col++) {
-      const type = weightedRandomType(floor, floorsPerAct);
-      nodes.push({
-        id: generateId(floor, col),
-        type,
-        floor,
-        column: col,
-        connections: [],
-        visited: false,
-      });
-    }
-
-    layers.push({ floor, nodes });
-  }
-
-  for (let i = 0; i < layers.length - 1; i++) {
-    const current = layers[i];
-    const next = layers[i + 1];
-
-    for (const node of current.nodes) {
-      const possibleTargets = next.nodes;
-      if (possibleTargets.length === 0) continue;
-
-      const targetIndex = Math.min(
-        node.column,
-        possibleTargets.length - 1
-      );
-      node.connections.push(possibleTargets[targetIndex].id);
-
-      if (targetIndex > 0 && Math.random() > 0.5) {
-        node.connections.push(possibleTargets[targetIndex - 1].id);
+    for (const node of cur.nodes) {
+      const targets = next.nodes.filter((n) => Math.abs(n.column - node.column) <= 1);
+      if (targets.length === 0) {
+        // fallback: connect to nearest next-floor node
+        const nearest = next.nodes.reduce((best, n) =>
+          Math.abs(n.column - node.column) < Math.abs(best.column - node.column) ? n : best
+        );
+        node.connections.push(nearest.id);
+      } else {
+        for (const t of targets) {
+          // Always connect to same column; probabilistic for diagonals
+          if (t.column === node.column || Math.random() > 0.45) {
+            node.connections.push(t.id);
+          }
+        }
+        // Ensure at least one connection
+        if (node.connections.length === 0) {
+          const t = targets[Math.floor(Math.random() * targets.length)];
+          node.connections.push(t.id);
+        }
       }
-      if (targetIndex < possibleTargets.length - 1 && Math.random() > 0.5) {
-        node.connections.push(possibleTargets[targetIndex + 1].id);
-      }
-
       node.connections = [...new Set(node.connections)];
     }
 
+    // Ensure every next-floor node has at least one incoming edge
     for (const nextNode of next.nodes) {
-      const hasIncoming = current.nodes.some((n) =>
-        n.connections.includes(nextNode.id)
-      );
-      if (!hasIncoming && current.nodes.length > 0) {
-        const randomParent = current.nodes[Math.floor(Math.random() * current.nodes.length)];
-        randomParent.connections.push(nextNode.id);
+      const hasIncoming = cur.nodes.some((n) => n.connections.includes(nextNode.id));
+      if (!hasIncoming) {
+        // Connect the closest current node to it
+        const donor = cur.nodes.reduce((best, n) =>
+          Math.abs(n.column - nextNode.column) < Math.abs(best.column - nextNode.column) ? n : best
+        );
+        donor.connections.push(nextNode.id);
       }
     }
   }
 
-  return {
-    layers,
-    currentNodeId: null,
-    act,
-  };
+  return { layers, currentNodeId: null, act };
 }
 
 export function getNode(map: GameMap, nodeId: string): MapNode | null {
@@ -129,10 +150,8 @@ export function getReachableNodes(map: GameMap): MapNode[] {
   if (!map.currentNodeId) {
     return map.layers[0]?.nodes ?? [];
   }
-
   const current = getNode(map, map.currentNodeId);
   if (!current) return [];
-
   return current.connections
     .map((id) => getNode(map, id))
     .filter((n): n is MapNode => n !== null);
@@ -141,7 +160,6 @@ export function getReachableNodes(map: GameMap): MapNode[] {
 export function advanceToNode(map: GameMap, nodeId: string): GameMap {
   const node = getNode(map, nodeId);
   if (!node) return map;
-
   return {
     ...map,
     currentNodeId: nodeId,
