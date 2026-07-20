@@ -1,0 +1,589 @@
+/* ═══════════════════════════════════════════════════════════
+   STS-style HUD layout
+   ─ Player stats: bottom-left
+   ─ Energy orbs:  just above player
+   ─ Draw pile:    bottom-left corner
+   ─ Discard pile: bottom-right corner
+   ─ Enemy panel:  upper-center
+   ─ End Turn btn: bottom-right
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Player Area (bottom-left) ──────────────────────────── */
+#player-area {
+  position: absolute;
+  bottom: 160px;
+  left: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 10;
+  pointer-events: none;
+  width: 180px;
+}
+
+#player-name-row {
+  font-family: 'Courier New', monospace;
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: #8898cc;
+  text-transform: uppercase;
+}
+
+/* HP bar row */
+#hp-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hp-icon {
+  font-size: 14px;
+  color: #ff4455;
+  text-shadow: 0 0 6px #ff445580;
+  flex-shrink: 0;
+}
+
+.bar-bg {
+  flex: 1;
+  height: 10px;
+  background: #1a1a2e;
+  border-radius: 5px;
+  overflow: hidden;
+  border: 1px solid #333;
+}
+
+.bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.35s ease;
+}
+
+.hp-fill {
+  background: linear-gradient(90deg, #cc2233, #ff4455, #ff6677);
+  box-shadow: 0 0 6px #ff445566;
+}
+
+.bar-text {
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  color: #dde;
+  white-space: nowrap;
+  min-width: 46px;
+  text-align: right;
+}
+
+/* Enemy HP fill */
+.enemy-hp-fill {
+  background: linear-gradient(90deg, #cc2244, #ff4466);
+  box-shadow: 0 0 4px #ff446660;
+}
+
+/* Block row */
+#block-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+#block-row.active {
+  opacity: 1;
+}
+
+.block-icon {
+  font-size: 16px;
+  color: #44ddff;
+  flex-shrink: 0;
+}
+
+#block-text {
+  font-family: 'Courier New', monospace;
+  font-size: 18px;
+  font-weight: bold;
+  color: #44ddff;
+  text-shadow: 0 0 8px #44ddff80;
+}
+
+/* Player effects */
+#player-effects {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.player-effect-badge {
+  font-family: 'Courier New', monospace;
+  font-size: 10px;
+  font-weight: bold;
+  background: rgba(0,0,0,0.5);
+  border: 1px solid var(--eff-color);
+  border-radius: 4px;
+  padding: 2px 5px;
+  color: var(--eff-color);
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  text-shadow: 0 0 4px var(--eff-color);
+}
+
+.player-effect-badge .eff-stacks {
+  font-size: 11px;
+}
+
+/* ── Energy Display (above player) ──────────────────────── */
+#energy-display {
+  position: absolute;
+  bottom: 280px;
+  left: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 10;
+  pointer-events: none;
+}
+
+#energy-orbs {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+.energy-orb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #ffe066, #ffaa00);
+  box-shadow: 0 0 8px #ffdd4499, 0 0 3px #ffdd44;
+  transition: opacity 0.25s, transform 0.25s, box-shadow 0.25s;
+}
+
+.energy-orb.spent {
+  opacity: 0.15;
+  transform: scale(0.65);
+  box-shadow: none;
+  background: #443322;
+}
+
+#energy-text {
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  font-weight: bold;
+  color: #ffdd44;
+  text-shadow: 0 0 8px #ffdd4480;
+}
+
+/* ── Draw Pile (bottom-left corner) ─────────────────────── */
+#draw-pile-btn {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  width: 54px;
+  height: 70px;
+  background: linear-gradient(140deg, #1a1a30 0%, #0f0f20 100%);
+  border: 2px solid #2a2a5a;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  z-index: 10;
+  cursor: pointer;
+  pointer-events: all;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-shadow: 2px 2px 0 #111, 4px 4px 0 #0a0a16;  /* stack depth illusion */
+}
+
+#draw-pile-btn:hover {
+  border-color: #44aaff;
+  box-shadow: 0 0 12px #44aaff40, 2px 2px 0 #111, 4px 4px 0 #0a0a16;
+}
+
+/* ── Discard Pile (bottom-right corner) ─────────────────── */
+#discard-pile-btn {
+  position: absolute;
+  bottom: 20px;
+  right: 160px;
+  width: 54px;
+  height: 70px;
+  background: linear-gradient(140deg, #1a1a30 0%, #0f0f20 100%);
+  border: 2px solid #2a2a4a;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  z-index: 10;
+  cursor: pointer;
+  pointer-events: all;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  opacity: 0.7;
+}
+
+#discard-pile-btn:hover {
+  border-color: #ff8844;
+  opacity: 1;
+}
+
+.pile-count {
+  font-family: 'Courier New', monospace;
+  font-size: 18px;
+  font-weight: bold;
+  color: #ddeeff;
+}
+
+.pile-icon {
+  font-size: 14px;
+  opacity: 0.6;
+}
+
+.pile-label {
+  font-family: 'Courier New', monospace;
+  font-size: 8px;
+  color: #667;
+  letter-spacing: 0.5px;
+}
+
+/* ── End Turn Button (bottom-right) ─────────────────────── */
+#end-turn-area {
+  position: absolute;
+  bottom: 20px;
+  right: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  z-index: 10;
+}
+
+.end-turn-hint {
+  font-family: 'Courier New', monospace;
+  font-size: 9px;
+  color: #556;
+  letter-spacing: 1px;
+}
+
+.neon-btn {
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  font-weight: bold;
+  letter-spacing: 1.5px;
+  padding: 10px 18px;
+  border: 2px solid #333;
+  border-radius: 6px;
+  background: rgba(10,10,20,0.92);
+  color: #445;
+  cursor: not-allowed;
+  transition: all 0.18s ease;
+  text-transform: uppercase;
+  pointer-events: all;
+  backdrop-filter: blur(4px);
+}
+
+.neon-btn.active {
+  border-color: #44ddff;
+  color: #44ddff;
+  cursor: pointer;
+  box-shadow: 0 0 16px #44ddff40, inset 0 0 12px #44ddff12;
+}
+
+.neon-btn.active:hover {
+  background: rgba(68,221,255,0.12);
+  box-shadow: 0 0 28px #44ddff70, inset 0 0 18px #44ddff20;
+  transform: translateY(-1px);
+}
+
+.neon-btn.large {
+  font-size: 15px;
+  padding: 13px 32px;
+  letter-spacing: 2px;
+}
+
+/* ── Enemy Container (upper center) ─────────────────────── */
+#enemy-container {
+  position: absolute;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  z-index: 5;
+  pointer-events: none;
+}
+
+/* ── Enemy Card ──────────────────────────────────────────── */
+.enemy-card {
+  --enemy-color: #ff4466;
+
+  background: rgba(18, 8, 22, 0.88);
+  border: 2px solid #2a1a3a;
+  border-radius: 12px;
+  padding: 10px 14px;
+  width: 170px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  pointer-events: all;
+  backdrop-filter: blur(6px);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+}
+
+.enemy-card:hover { border-color: color-mix(in srgb, var(--enemy-color) 60%, #333); }
+
+.enemy-card.selected {
+  border-color: var(--enemy-color);
+  box-shadow:
+    0 0 20px color-mix(in srgb, var(--enemy-color) 40%, transparent),
+    inset 0 0 12px color-mix(in srgb, var(--enemy-color) 10%, transparent);
+}
+
+.enemy-card.selected .enemy-name {
+  color: var(--enemy-color);
+  text-shadow: 0 0 8px var(--enemy-color);
+}
+
+.enemy-card.dead { opacity: 0.25; pointer-events: none; filter: grayscale(0.8); }
+
+.enemy-name {
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  font-weight: bold;
+  color: #dde;
+  letter-spacing: 0.5px;
+  text-align: center;
+}
+
+/* Intent */
+.enemy-intent {
+  --intent-color: #aaa;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(0,0,0,0.5);
+  border: 1px solid color-mix(in srgb, var(--intent-color) 40%, transparent);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-family: 'Courier New', monospace;
+}
+
+.intent-icon  { font-size: 14px; }
+.intent-label { font-size: 9px; font-weight: bold; color: var(--intent-color); letter-spacing: 0.5px; }
+.intent-damage { font-size: 16px; font-weight: bold; color: #ff4455; text-shadow: 0 0 6px #ff445580; }
+.intent-block-val { font-size: 14px; font-weight: bold; color: #44ddff; }
+.intent-effect-val { font-size: 13px; font-weight: bold; color: var(--intent-color); }
+.intent-unknown { opacity: 0.4; }
+
+/* Enemy sprite */
+.enemy-sprite-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 4px 0;
+}
+
+.enemy-sprite {
+  --enemy-color: #ff4466;
+  width: 72px;
+  height: 72px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.enemy-sprite-glow {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--enemy-color) 30%, transparent) 0%, transparent 70%);
+  animation: enemyPulse 2.4s ease-in-out infinite;
+}
+
+.enemy-sprite-body {
+  width: 52px;
+  height: 52px;
+  border-radius: 40% 60% 55% 45% / 45% 55% 60% 40%;
+  border: 3px solid var(--enemy-color);
+  background: radial-gradient(ellipse at 35% 35%, color-mix(in srgb, var(--enemy-color) 20%, transparent), transparent 60%);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--enemy-color) 35%, transparent), inset 0 0 10px rgba(0,0,0,0.5);
+  animation: enemyFloat 3s ease-in-out infinite;
+}
+
+.enemy-sprite-eye {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--enemy-color);
+  box-shadow: 0 0 8px var(--enemy-color);
+  animation: eyeBlink 4s ease-in-out infinite;
+}
+
+@keyframes enemyPulse {
+  0%,100% { opacity: 0.5; transform: scale(1); }
+  50%      { opacity: 0.9; transform: scale(1.08); }
+}
+
+@keyframes enemyFloat {
+  0%,100% { transform: translateY(0); }
+  50%      { transform: translateY(-4px); }
+}
+
+@keyframes eyeBlink {
+  0%,90%,100% { transform: scaleY(1); }
+  95%          { transform: scaleY(0.1); }
+}
+
+/* Block badge on enemy */
+.enemy-block-badge {
+  position: absolute;
+  bottom: -4px;
+  right: -8px;
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  font-weight: bold;
+  color: #44ddff;
+  background: rgba(0,0,0,0.7);
+  border: 1px solid #44ddff;
+  border-radius: 4px;
+  padding: 2px 5px;
+  text-shadow: 0 0 6px #44ddff;
+}
+
+/* HP bar */
+.enemy-hp-wrap {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.enemy-hp-wrap .bar-bg { height: 8px; }
+.enemy-hp-wrap .bar-text { font-family: 'Courier New', monospace; font-size: 10px; color: #aaa; text-align: center; }
+
+/* Effects row */
+.enemy-effects {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  justify-content: center;
+}
+
+.effect-badge {
+  --eff-color: #aaa;
+  font-family: 'Courier New', monospace;
+  font-size: 9px;
+  font-weight: bold;
+  padding: 2px 5px;
+  border-radius: 3px;
+  background: rgba(0,0,0,0.4);
+  border: 1px solid var(--eff-color);
+  color: var(--eff-color);
+}
+
+/* ── Phase Overlay ───────────────────────────────────────── */
+#phase-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+
+#phase-overlay.hidden  { opacity: 0; pointer-events: none; }
+#phase-overlay.visible { opacity: 1; }
+
+#phase-text {
+  font-family: 'Courier New', monospace;
+  font-size: 34px;
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 0 0 20px #44aaff, 0 0 50px #44aaff60;
+  letter-spacing: 5px;
+  padding: 12px 32px;
+  background: rgba(0,0,0,0.55);
+  border: 1px solid #44aaff40;
+  border-radius: 8px;
+  backdrop-filter: blur(4px);
+}
+
+/* ── Game Over Overlay ───────────────────────────────────── */
+#game-over-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  background: rgba(0,0,0,0.82);
+  backdrop-filter: blur(6px);
+  transition: opacity 0.35s ease;
+}
+
+#game-over-overlay.hidden  { opacity: 0; pointer-events: none; }
+#game-over-overlay.visible { opacity: 1; }
+
+.game-over-box {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  padding: 40px 60px;
+  background: rgba(8,8,18,0.9);
+  border: 2px solid #2a2a5a;
+  border-radius: 16px;
+  box-shadow: 0 0 60px rgba(0,0,0,0.6);
+}
+
+#result-title {
+  font-family: 'Courier New', monospace;
+  font-size: 38px;
+  letter-spacing: 4px;
+  margin: 0;
+}
+
+#result-subtitle {
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  color: #778;
+  margin: 0;
+}
+
+/* ── Player hit flash ────────────────────────────────────── */
+#damage-flash {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 40, 60, 0.18);
+  pointer-events: none;
+  z-index: 80;
+  opacity: 0;
+  transition: opacity 0.08s;
+}
+
+#damage-flash.flash { animation: dmgFlash 0.4s ease-out forwards; }
+
+@keyframes dmgFlash {
+  0%  { opacity: 1; }
+  100%{ opacity: 0; }
+}
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 700px) {
+  #player-area { bottom: 140px; width: 150px; }
+  #energy-display { bottom: 245px; }
+  #enemy-container { top: 60px; }
+  .enemy-card { width: 140px; padding: 8px; }
+  #end-turn-area { bottom: 14px; right: 10px; }
+  #draw-pile-btn { bottom: 14px; left: 10px; }
+  #discard-pile-btn { bottom: 14px; right: 110px; }
+}

@@ -1,0 +1,23 @@
+kind = "mobile"
+previewPath = "/techno-rogue-mobile/"
+title = "TechnoRogue Mobile"
+version = "1.0.0"
+id = "artifacts/techno-rogue-mobile"
+router = "expo-domain"
+
+[[services]]
+name = "expo"
+ensurePreviewReachable = "/status"
+paths = [ "/techno-rogue-mobile/" ]
+localPort = 20980
+
+[services.development]
+run = "pnpm --filter @workspace/techno-rogue-mobile run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/techno-rogue-mobile", "run", "build" ]
+run = [ "pnpm", "--filter", "@workspace/techno-rogue-mobile", "run", "serve" ]
+
+[services.env]
+PORT = "20980"
+BASE_PATH = "/techno-rogue-mobile/"

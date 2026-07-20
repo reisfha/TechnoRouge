@@ -1,0 +1,238 @@
+/* ── Hand Container ───────────────────────────────────────── */
+#hand-container {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  z-index: 10;
+  pointer-events: none;
+  padding: 0 20px 8px;
+}
+
+/* ── Card Wrapper (arc positioning) ──────────────────────── */
+/*
+ * The wrapper holds ONLY the arc rotation so the inner .card can use
+ * transform-origin: center bottom for hover scaling without any
+ * positional jump. This eliminates the hover-jitter bug where
+ * translateY would move the card away from the cursor.
+ */
+.card-wrapper {
+  --card-rotation: 0deg;
+  pointer-events: none;           /* wrapper never eats clicks */
+  transform: rotate(var(--card-rotation));
+  transform-origin: center 400px; /* distant pivot = arc effect */
+  margin: 0 -5px;                 /* cards slightly overlap */
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+  transition: none;               /* wrapper does not animate */
+}
+
+/* Bring the active card's wrapper to the front */
+.card-wrapper:has(.card:hover:not(.unplayable)),
+.card-wrapper:has(.card.highlight) {
+  z-index: 200;
+}
+
+/* ── Card (visual + interactive element) ─────────────────── */
+.card {
+  --card-color: #ffffff;
+  --rarity-border: #3a3a5a;
+  --rarity-glow: rgba(100,100,120,0.3);
+
+  pointer-events: all;            /* card receives clicks/hover */
+  position: relative;
+  width: 120px;
+  height: 178px;
+  background: linear-gradient(160deg, #12122a 0%, #0c0c1e 100%);
+  border: 2px solid var(--rarity-border);
+  border-radius: 10px;
+  padding: 0;
+  cursor: pointer;
+  /* NO arc rotation here — wrapper handles it */
+  transition:
+    transform 0.18s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    filter 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Courier New', monospace;
+  color: #ccc;
+  user-select: none;
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+  overflow: hidden;
+}
+
+/*
+ * Hover: scale from the bottom so the card lifts toward the player.
+ * transform-origin: center bottom keeps the bottom edge stationary,
+ * meaning the cursor (which is near the bottom when you hover in)
+ * stays over the card throughout the animation → no hover jitter.
+ */
+.card:hover:not(.unplayable) {
+  transform: scale(1.1) translateY(-10px);
+  transform-origin: center bottom;
+  border-color: var(--card-color);
+  box-shadow:
+    0 14px 44px rgba(0, 0, 0, 0.7),
+    0 0 28px color-mix(in srgb, var(--card-color) 50%, transparent),
+    0 0 0 1px var(--card-color) inset;
+  filter: brightness(1.15);
+}
+
+.card.playable {
+  border-color: color-mix(in srgb, var(--rarity-border) 40%, var(--card-color) 60%);
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.5),
+    0 0 10px color-mix(in srgb, var(--card-color) 25%, transparent);
+}
+
+.card.unplayable {
+  opacity: 0.45;
+  filter: grayscale(0.6) brightness(0.7);
+  cursor: not-allowed;
+}
+
+.card.highlight {
+  border-color: var(--card-color);
+  box-shadow: 0 0 20px color-mix(in srgb, var(--card-color) 60%, transparent);
+}
+
+/* ── Card Internals ───────────────────────────────────────── */
+.card-cost {
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50% 0 50% 0;
+  background: var(--card-color);
+  color: #000;
+  font-weight: bold;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 10px var(--card-color);
+  z-index: 2;
+}
+
+.card-name {
+  font-size: 11px;
+  font-weight: bold;
+  color: #fff;
+  text-align: center;
+  letter-spacing: 0.5px;
+  padding: 6px 4px 4px 30px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 0;
+}
+
+/* Art panel */
+.card-art {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 4px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.card-art-symbol {
+  font-size: 28px;
+  opacity: 0.85;
+  text-shadow: 0 0 12px currentColor;
+  filter: drop-shadow(0 0 8px currentColor);
+}
+
+/* Type row */
+.card-type-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 3px 6px;
+  flex-shrink: 0;
+}
+
+.card-type-pip {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  opacity: 0.8;
+}
+
+.card-type-label {
+  font-size: 8px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  opacity: 0.9;
+}
+
+/* Description */
+.card-description {
+  font-size: 9.5px;
+  color: #b0b8d8;
+  text-align: center;
+  line-height: 1.35;
+  padding: 0 6px 5px;
+  flex-shrink: 0;
+}
+
+/* Exhaust tag */
+.card-exhaust-tag {
+  font-size: 7px;
+  color: #ff8844;
+  text-align: center;
+  letter-spacing: 1px;
+  padding-bottom: 3px;
+  opacity: 0.8;
+  flex-shrink: 0;
+}
+
+/* ── Responsive ───────────────────────────────────────────── */
+@media (max-width: 700px) {
+  .card { width: 90px; height: 138px; }
+  .card-name { font-size: 9px; }
+  .card-description { font-size: 8px; }
+  .card-art-symbol { font-size: 22px; }
+}
+
+@media (max-width: 420px) {
+  .card { width: 72px; height: 116px; }
+  .card-name { font-size: 8px; padding: 4px 3px 3px 24px; }
+  .card-description { font-size: 7px; }
+  .card-art-symbol { font-size: 18px; }
+  .card-cost { width: 24px; height: 24px; font-size: 12px; }
+}
+
+/* ── Floating damage number ───────────────────────────────── */
+.float-number {
+  position: absolute;
+  font-family: 'Courier New', monospace;
+  font-size: 22px;
+  font-weight: bold;
+  pointer-events: none;
+  z-index: 999;
+  animation: floatUp 0.9s ease-out forwards;
+  text-shadow: 0 0 8px currentColor, 1px 1px 2px #000;
+}
+
+@keyframes floatUp {
+  0%   { transform: translateY(0)    scale(1.2); opacity: 1; }
+  60%  { transform: translateY(-50px) scale(1);   opacity: 1; }
+  100% { transform: translateY(-80px) scale(0.8); opacity: 0; }
+}
