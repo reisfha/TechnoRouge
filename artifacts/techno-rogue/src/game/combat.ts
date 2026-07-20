@@ -1,6 +1,5 @@
 import { Card, Player, EnemyState, CombatEntity } from './types';
 
-// Array shuffling utility
 export const shuffle = <T>(array: T[]): T[] => {
   const newArr = [...array];
   for (let i = newArr.length - 1; i > 0; i--) {
@@ -10,21 +9,21 @@ export const shuffle = <T>(array: T[]): T[] => {
   return newArr;
 };
 
-// Calculate final damage considering status effects
 export const calculateDamage = (baseDamage: number, attacker: CombatEntity, defender: CombatEntity): number => {
   let damage = baseDamage;
   
-  // Attacker buffs/debuffs
   damage += attacker.statusEffects.strength;
   if (attacker.statusEffects.temporaryStrength) {
     damage += attacker.statusEffects.temporaryStrength;
+  }
+  if (attacker.statusEffects.momentum > 0) {
+    damage += attacker.statusEffects.momentum;
   }
   
   if (attacker.statusEffects.weak > 0) {
     damage = Math.floor(damage * 0.75);
   }
   
-  // Defender debuffs
   if (defender.statusEffects.vulnerable > 0) {
     damage = Math.floor(damage * 1.5);
   }
@@ -32,7 +31,6 @@ export const calculateDamage = (baseDamage: number, attacker: CombatEntity, defe
   return Math.max(0, damage);
 };
 
-// Apply damage to an entity, hitting block first
 export const applyDamage = (damage: number, target: CombatEntity): { target: CombatEntity, actualDamage: number } => {
   let actualDamage = damage;
   let newBlock = target.block;
@@ -66,6 +64,9 @@ export const reduceStatusDurations = (status: CombatEntity['statusEffects']) => 
     weak: Math.max(0, status.weak - 1),
     vulnerable: Math.max(0, status.vulnerable - 1),
     stunned: Math.max(0, status.stunned - 1),
-    temporaryStrength: 0 // Wears off at end of turn
+    burn: Math.max(0, status.burn - 1),
+    poison: Math.max(0, status.poison - 1),
+    temporaryStrength: 0,
+    momentum: 0
   };
 };

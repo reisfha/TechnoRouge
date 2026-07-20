@@ -36,11 +36,10 @@
   --color-destructive-foreground: hsl(var(--destructive-foreground));
 
   --color-netrunner: hsl(180 100% 50%);
-  --color-samurai: hsl(15 100% 50%);
-  --color-fixer: hsl(45 100% 50%);
-  
-  --color-neon-pink: hsl(320 100% 50%);
-  --color-neon-green: hsl(120 100% 50%);
+  --color-gunslinger: hsl(320 100% 50%);
+  --color-cyborg: hsl(120 100% 50%);
+  --color-ripper: hsl(0 100% 50%);
+  --color-corporate: hsl(45 100% 50%);
 
   --font-sans: 'Share Tech Mono', monospace;
   --font-display: 'Orbitron', sans-serif;
@@ -141,6 +140,19 @@
     background-size: 100% 4px;
     pointer-events: none;
   }
+  
+  .terminal-cursor {
+    display: inline-block;
+    width: 10px;
+    height: 1.2em;
+    background-color: currentColor;
+    animation: blink 1s step-end infinite;
+    vertical-align: text-bottom;
+  }
+  
+  .crt-flicker {
+    animation: crtFlicker 0.15s infinite;
+  }
 }
 
 @keyframes glitch-anim-1 {
@@ -159,4 +171,14 @@
   60% { clip-path: inset(20% 0 50% 0); }
   80% { clip-path: inset(90% 0 5% 0); }
   100% { clip-path: inset(40% 0 40% 0); }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@keyframes crtFlicker {
+  0% { opacity: 0.95; }
+  100% { opacity: 1; }
 }

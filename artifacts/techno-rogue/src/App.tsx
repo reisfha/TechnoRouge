@@ -5,47 +5,54 @@ import { MapScreen } from './screens/MapScreen';
 import { CombatScreen } from './screens/CombatScreen';
 import { RewardScreen } from './screens/RewardScreen';
 import { RestSiteScreen } from './screens/RestSiteScreen';
+import { ShopScreen } from './screens/ShopScreen';
+import { EventScreen } from './screens/EventScreen';
 import { useGame, GameProvider } from './context/GameContext';
-import { Button } from '@/components/ui/button';
+import { MILESTONES, loadMetaState } from './game/milestones';
 
 const ScreenRouter: React.FC = () => {
   const { state, dispatch } = useGame();
 
-  // Basic catch-alls for un-implemented screens
-  const EventScreen = () => (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center">
-      <h2 className="text-3xl font-display text-purple-400 mb-4">SYSTEM ANOMALY</h2>
-      <p className="mb-8">You found some credits lying around.</p>
-      <Button onClick={() => {
-        dispatch({ type: 'CLAIM_REWARD', payload: { gold: 30 } });
-        dispatch({ type: 'PROCEED_TO_MAP' });
-      }}>Proceed</Button>
-    </div>
-  );
-
-  const ShopScreen = () => (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center">
-      <h2 className="text-3xl font-display text-yellow-400 mb-4">BLACK MARKET</h2>
-      <p className="mb-8">Vendor is out of stock. Move along.</p>
-      <Button onClick={() => dispatch({ type: 'PROCEED_TO_MAP' })}>Leave</Button>
-    </div>
-  );
-
   const GameOverScreen = () => (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center">
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-black crt-flicker">
+      <div className="absolute inset-0 scanlines z-50 pointer-events-none opacity-50" />
       <h2 className="text-5xl font-display text-red-500 mb-4 glitch-text" data-text="SYSTEM FAILURE">SYSTEM FAILURE</h2>
-      <p className="mb-8 text-muted-foreground">Floors cleared: {state.run.floorsCleared}</p>
-      <Button onClick={() => dispatch({ type: 'RESTART' })}>REBOOT</Button>
+      <p className="mb-2 text-muted-foreground font-mono">Floors cleared: {state.run.floorsCleared}</p>
+      <p className="mb-2 text-muted-foreground font-mono">Enemies neutralized: {state.run.enemiesKilled}</p>
+      <p className="mb-8 text-muted-foreground font-mono">Max CB reached: {state.run.maxCryptobytes}</p>
+      <button 
+        className="border border-red-500 text-red-500 px-6 py-2 font-mono hover:bg-red-500 hover:text-black transition-colors"
+        onClick={() => dispatch({ type: 'RESTART' })}
+      >
+        REBOOT
+      </button>
     </div>
   );
 
-  const VictoryScreen = () => (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center">
-      <h2 className="text-5xl font-display text-primary mb-4 glitch-text" data-text="UPLINK ESTABLISHED">UPLINK ESTABLISHED</h2>
-      <p className="mb-8 text-muted-foreground">You survived.</p>
-      <Button onClick={() => dispatch({ type: 'RESTART' })}>START NEW RUN</Button>
-    </div>
-  );
+  const VictoryScreen = () => {
+    const meta = loadMetaState();
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-black crt-flicker">
+        <div className="absolute inset-0 scanlines z-50 pointer-events-none opacity-50" />
+        <h2 className="text-5xl font-display text-primary mb-4 glitch-text" data-text="UPLINK ESTABLISHED">UPLINK ESTABLISHED</h2>
+        <p className="mb-8 text-primary font-mono">You survived. The Overseer has been purged.</p>
+        
+        <div className="mb-8 text-left border border-primary/30 p-4 bg-primary/10 w-full max-w-md">
+          <h3 className="text-xl font-display text-primary mb-2">RUN STATS</h3>
+          <p className="text-muted-foreground font-mono text-sm">Floors cleared: {state.run.floorsCleared}</p>
+          <p className="text-muted-foreground font-mono text-sm">Enemies neutralized: {state.run.enemiesKilled}</p>
+          <p className="text-muted-foreground font-mono text-sm">Packages acquired: {state.player?.packages.length}</p>
+        </div>
+
+        <button 
+          className="border border-primary text-primary px-6 py-2 font-mono hover:bg-primary hover:text-black transition-colors"
+          onClick={() => dispatch({ type: 'RESTART' })}
+        >
+          DISCONNECT
+        </button>
+      </div>
+    );
+  };
 
   switch (state.screen) {
     case 'title': return <TitleScreen />;
