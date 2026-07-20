@@ -1,14 +1,14 @@
 import { MapState, MapNode, NodeType } from './types';
 
 export const generateMap = (act: number): MapState => {
-  const rows = 6; // Row 0 is bottom, Row 5 is Boss
-  const cols = 4;
+  const rows = 12; // Longer acts
+  const cols = 5;
   
   const nodes: MapNode[][] = [];
   
   for (let r = 0; r < rows; r++) {
     const rowNodes: MapNode[] = [];
-    const numNodesInRow = r === rows - 1 ? 1 : 3 + Math.floor(Math.random() * 2); // 3-4 nodes, except Boss
+    const numNodesInRow = r === rows - 1 ? 1 : 3 + Math.floor(Math.random() * 2);
     
     for (let c = 0; c < numNodesInRow; c++) {
       let type: NodeType = 'COMBAT';
@@ -19,12 +19,14 @@ export const generateMap = (act: number): MapState => {
         type = 'REST';
       } else if (r === 0) {
         type = 'COMBAT';
+      } else if (r === Math.floor(rows / 2)) {
+        type = 'DATA_VAULT'; // Guaranteed vault middle of act
       } else {
         const rand = Math.random();
-        if (rand < 0.4) type = 'COMBAT';
-        else if (rand < 0.6) type = 'EVENT';
-        else if (rand < 0.75) type = 'ELITE';
-        else if (rand < 0.9) type = 'SHOP';
+        if (rand < 0.35) type = 'COMBAT';
+        else if (rand < 0.55) type = 'EVENT';
+        else if (rand < 0.70) type = 'ELITE';
+        else if (rand < 0.85) type = 'SHOP';
         else type = 'REST';
       }
       
@@ -39,12 +41,10 @@ export const generateMap = (act: number): MapState => {
     nodes.push(rowNodes);
   }
   
-  // Connect nodes
   for (let r = 0; r < rows - 1; r++) {
     const currRow = nodes[r];
     const nextRow = nodes[r + 1];
     
-    // Ensure every node in nextRow has at least one parent
     nextRow.forEach(nNode => {
       const pNode = currRow[Math.floor(Math.random() * currRow.length)];
       if (!pNode.connectedTo.includes(nNode.id)) {
@@ -52,7 +52,6 @@ export const generateMap = (act: number): MapState => {
       }
     });
     
-    // Ensure every node in currRow has at least one child
     currRow.forEach(cNode => {
       if (cNode.connectedTo.length === 0) {
         const nNode = nextRow[Math.floor(Math.random() * nextRow.length)];
@@ -66,6 +65,6 @@ export const generateMap = (act: number): MapState => {
     nodes,
     currentNodeId: null,
     completedNodeIds: [],
-    availableNodeIds: nodes[0].map(n => n.id) // Bottom row
+    availableNodeIds: nodes[0].map(n => n.id)
   };
 };

@@ -1,26 +1,27 @@
-export type CharacterClass = 'NETRUNNER' | 'STREET_SAMURAI' | 'CORPORATE_FIXER';
+export type CharacterClass = 'NETRUNNER' | 'GUNSLINGER' | 'CYBORG' | 'RIPPER' | 'CORPORATE_AGENT';
 
 export type CardType = 'Attack' | 'Defense' | 'Skill' | 'Power';
-export type CardRarity = 'Common' | 'Uncommon' | 'Rare' | 'Starter';
+export type CardRarity = 'Common' | 'Uncommon' | 'Rare' | 'Starter' | 'Milestone';
 
 export interface Card {
-  id: string; // unique per instance in deck
-  cardId: string; // base identifier
+  id: string;
+  cardId: string;
   name: string;
   type: CardType;
   cost: number;
+  isXCost?: boolean;
   description: string;
   rarity: CardRarity;
-  class: CharacterClass;
+  class: CharacterClass | 'ANY';
   isUpgraded: boolean;
   
-  // Base values (can be modified by status effects)
   damage?: number;
   block?: number;
   hits?: number;
-  
-  // Custom play logic handled in reducer/actions
-  // We'll use a string id to lookup effects
+  heal?: number;
+
+  exhaust?: boolean;
+  ethereal?: boolean;
 }
 
 export type EnemyIntentType = 'ATTACK' | 'DEFEND' | 'SPECIAL' | 'DEBUFF' | 'BUFF';
@@ -33,15 +34,17 @@ export interface EnemyIntent {
 }
 
 export interface StatusEffects {
-  strength: number; // +dmg per stack
-  dexterity: number; // +block per stack
-  vulnerable: number; // take 50% more dmg (turns)
-  weak: number; // deal 25% less dmg (turns)
-  virus: number; // netrunner: 1 dmg per stack turn start
-  burn: number; // dmg each turn (turns)
-  stunned: number; // skip turn
-  momentum: number; // next attack deals +X dmg
-  temporaryStrength?: number; // strength that is removed at end of turn
+  strength: number; 
+  dexterity: number; 
+  vulnerable: number; 
+  weak: number; 
+  virus: number; 
+  burn: number; 
+  stunned: number; 
+  momentum: number; 
+  fortify: number;
+  poison: number;
+  temporaryStrength?: number;
 }
 
 export interface CombatEntity {
@@ -57,9 +60,12 @@ export interface Player extends CombatEntity {
   class: CharacterClass;
   energy: number;
   maxEnergy: number;
-  gold: number;
+  cryptobytes: number;
   deck: Card[];
-  relics: string[];
+  packages: string[];
+  surge: number; // Ripper healing overflow
+  budget: number; // Corporate agent temp budget
+  turnAttacks: number; // Gunslinger passive tracker
 }
 
 export interface EnemyState extends CombatEntity {
@@ -80,14 +86,14 @@ export type ScreenState =
   | 'gameOver' 
   | 'victory';
 
-export type NodeType = 'COMBAT' | 'ELITE' | 'REST' | 'SHOP' | 'EVENT' | 'BOSS';
+export type NodeType = 'COMBAT' | 'ELITE' | 'REST' | 'SHOP' | 'EVENT' | 'BOSS' | 'DATA_VAULT';
 
 export interface MapNode {
   id: string;
   type: NodeType;
   row: number;
   col: number;
-  connectedTo: string[]; // ids of nodes in next row
+  connectedTo: string[];
 }
 
 export interface MapState {
@@ -107,13 +113,14 @@ export interface CombatState {
   exhaustPile: Card[];
   cardsPlayedThisTurn: number;
   log: string[];
-  rewards?: { gold: number, cards: Card[] };
+  rewards?: { cryptobytes: number, cards: Card[], packageDrop?: string };
 }
 
 export interface RunState {
   floorsCleared: number;
   enemiesKilled: number;
   cardsPlayed: number;
+  maxCryptobytes: number;
 }
 
 export interface GameState {
