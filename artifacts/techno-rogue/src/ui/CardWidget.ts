@@ -1,4 +1,4 @@
-import { CardInstance } from '../entities/Card';
+import { CardInstance } from '@workspace/game-logic';
 
 const CARD_TYPE_COLORS: Record<string, string> = {
   code:     '#ff4455',
@@ -33,10 +33,10 @@ const RARITY_BORDER: Record<string, string> = {
 };
 
 export class CardWidget {
-  /** The outer wrapper — handles arc rotation, pointer-events: none */
+  /** The outer wrapper — handles arc rotation */
   element: HTMLDivElement;
-  /** The inner visual card — handles hover scaling, pointer-events: all */
-  private inner: HTMLDivElement;
+  /** The inner card button — handles hover, click, and visual */
+  private inner: HTMLButtonElement;
   private card: CardInstance;
   private onClick: (() => void) | null = null;
   private index: number;
@@ -45,20 +45,21 @@ export class CardWidget {
     this.card = card;
     this.index = index;
 
-    // Outer wrapper: arc positioning only — never receives pointer events
+    // Outer wrapper: arc positioning only
     this.element = document.createElement('div');
     this.element.className = 'card-wrapper';
     this.element.dataset.index = String(index);
 
-    // Inner card: visual element — receives pointer events and scales on hover
-    this.inner = document.createElement('div');
+    // Inner card: native button for reliable click handling
+    this.inner = document.createElement('button');
     this.inner.className = 'card';
+    this.inner.type = 'button';
     this.element.appendChild(this.inner);
 
     this.render();
 
-    // Click is on the inner card so the stable wrapper can't interfere
-    this.inner.addEventListener('click', () => {
+    this.inner.addEventListener('click', (e) => {
+      e.stopPropagation();
       if (this.inner.classList.contains('playable') && this.onClick) {
         this.onClick();
       }
