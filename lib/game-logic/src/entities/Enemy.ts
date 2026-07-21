@@ -1,6 +1,7 @@
 import { ActiveEffect } from './Effect';
 import { EnemyDefinition, EnemyIntent } from '../data/enemies';
 import { EffectSystem } from '../systems/EffectSystem';
+import { SeededRNG } from '../rng';
 
 export class Enemy {
   def: EnemyDefinition;
@@ -12,9 +13,9 @@ export class Enemy {
   currentIntent: EnemyIntent | null;
   turnCount: number;
 
-  constructor(def: EnemyDefinition, hpOverride?: number) {
+  constructor(def: EnemyDefinition, rng?: SeededRNG, hpOverride?: number) {
     this.def = def;
-    this.maxHp = hpOverride ?? Math.floor(Math.random() * (def.maxHp - def.minHp + 1) + def.minHp);
+    this.maxHp = hpOverride ?? Math.floor((rng ? rng.next() : Math.random()) * (def.maxHp - def.minHp + 1) + def.minHp);
     this.hp = this.maxHp;
     this.block = 0;
     this.effects = [];

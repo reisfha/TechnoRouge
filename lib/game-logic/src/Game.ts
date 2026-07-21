@@ -5,7 +5,8 @@ import { CardEffect, TargetType } from './data/cards';
 import { getEnemyDef } from './data/enemies';
 import { CLASS_DEFINITIONS, ClassDefinition } from './data/classes';
 import { shuffleArray } from './utils/helpers';
-import { GameMap, generateMap } from './data/map';
+import { GameMap, generateMap, advanceToNode } from './data/map';
+import { SeededRNG } from './rng';
 
 export type TurnPhase =
   | 'init'
@@ -35,6 +36,9 @@ class GameState {
   selectedTargetIndex: number = 0;
   cryptoBytes: number = 0;
   map: GameMap | null = null;
+  currentNodeType: 'combat' | 'elite' | 'boss' = 'combat';
+  seed: number = 0;
+  rng: SeededRNG = new SeededRNG(0);
   private listeners: Map<GameEventType, GameEventCallback[]> = new Map();
 
   on(event: GameEventType, cb: GameEventCallback): void {
@@ -51,11 +55,14 @@ class GameState {
     this.listeners.get(event)?.forEach((cb) => cb(event, data));
   }
 
-  startRun(className: string): void {
+  startRun(className: string, seed?: number): void {
     const classDef = CLASS_DEFINITIONS.find((c) => c.id === className);
     if (!classDef) throw new Error(`Unknown class: ${className}`);
+    this.seed = seed ?? Math.floor(Math.random() * 2 ** 32);
+    this.rng = new SeededRNG(this.seed);
     this.classDef = classDef;
     this.player = new Player(classDef.maxHp, classDef.maxEnergy, classDef.starterDeck);
+    this.player.rng = this.rng;
     this.turnNumber = 0;
     this.phase = 'init';
     this.cryptoBytes = 0;
@@ -64,11 +71,19 @@ class GameState {
   }
 
   generateMap(act: number = 1): GameMap {
-    this.map = generateMap(act);
+    this.map = generateMap(act, this.rng);
     return this.map;
   }
 
+  advanceMap(nodeId: string): void {
+    if (!this.map) return;
+    this.map = advanceToNode(this.map, nodeId);
+    this.emit('state_changed');
+  }
+
   spawnEnemies(type: 'combat' | 'elite' | 'boss' = 'combat'): void {
+    this.phase = 'init';
+    this.currentNodeType = type;
     let pool: string[];
     if (type === 'boss') {
       pool = ['system_guardian'];
@@ -77,9 +92,10 @@ class GameState {
     } else {
       pool = ['patrol_ice', 'firewall_daemon', 'corrupted_node', 'data_vampire'];
     }
-    const count = type === 'boss' ? 1 : type === 'elite' ? 1 : 1 + Math.floor(Math.random() * 2);
-    const shuffled = shuffleArray(pool);
-    this.enemies = shuffled.slice(0, count).map((id) => new Enemy(getEnemyDef(id)));
+    const count = type === 'boss' ? 1 : 1 + this.rng.nextInt(0, 2);
+    const shuffled = shuffleArray(pool, this.rng);
+    this.enemies = shuffled.slice(0, count).map((id) => new Enemy(getEnemyDef(id), this.rng));
+    this.selectedTargetIndex = 0;
   }
 
   awardCryptoBytes(type: 'combat' | 'elite' | 'boss'): void {
@@ -95,6 +111,9 @@ class GameState {
   }
 
   startCombat(): void {
+    for (const enemy of this.enemies) {
+      enemy.chooseIntent();
+    }
     this.startPlayerTurn();
   }
 
@@ -124,8 +143,6 @@ class GameState {
     this.emit('state_changed');
 
     this.checkEnemyDeath();
-    if (this.phase !== 'player_turn') return true;
-
     return true;
   }
 
@@ -148,9 +165,7 @@ class GameState {
         let dmg = effect.value ?? 0;
         dmg += playerStrength;
         const weakStacks = player.getEffectStacks('weak');
-        if (weakStacks > 0) {
-          dmg = Math.floor(dmg * 0.75);
-        }
+        if (weakStacks > 0) dmg = Math.floor(dmg * 0.75);
         if (target === 'all_enemies') {
           for (const enemy of this.enemies) {
             const actualDmg = enemy.takeDamage(dmg);
@@ -171,9 +186,7 @@ class GameState {
         let dmg = effect.value ?? 0;
         dmg += playerStrength;
         const weakStacks = player.getEffectStacks('weak');
-        if (weakStacks > 0) {
-          dmg = Math.floor(dmg * 0.75);
-        }
+        if (weakStacks > 0) dmg = Math.floor(dmg * 0.75);
         for (const enemy of this.enemies) {
           const actualDmg = enemy.takeDamage(dmg);
           this.emit('enemy_damaged', { enemy, damage: actualDmg });
@@ -184,9 +197,7 @@ class GameState {
       case 'block': {
         let block = effect.value ?? 0;
         const fortifyStacks = player.getEffectStacks('fortify');
-        if (fortifyStacks > 0) {
-          block += fortifyStacks;
-        }
+        if (fortifyStacks > 0) block += fortifyStacks;
         player.gainBlock(block);
         break;
       }
@@ -238,7 +249,6 @@ class GameState {
 
     for (const enemy of this.enemies) {
       if (!enemy.isAlive) continue;
-
       const intent = enemy.chooseIntent();
 
       switch (intent.type) {
@@ -246,9 +256,7 @@ class GameState {
           let dmg = intent.value ?? 0;
           dmg += enemy.strength;
           const weakStacks = enemy.getEffectStacks('weak');
-          if (weakStacks > 0) {
-            dmg = Math.floor(dmg * 0.75);
-          }
+          if (weakStacks > 0) dmg = Math.floor(dmg * 0.75);
           this.player.takeDamage(dmg);
           this.emit('player_hit', { damage: dmg, enemy });
           break;
@@ -279,46 +287,38 @@ class GameState {
 
   private applyEndOfTurnEffects(): void {
     if (!this.player) return;
-
     const playerPoison = this.player.applyStatusDamage();
-    if (playerPoison > 0) {
-      this.player.takeDamage(playerPoison);
-    }
+    if (playerPoison > 0) this.player.takeDamage(playerPoison);
     this.player.tickEffects();
 
     for (const enemy of this.enemies) {
       if (!enemy.isAlive) continue;
       const enemyPoison = enemy.applyStatusDamage();
-      if (enemyPoison > 0) {
-        enemy.takeDamage(enemyPoison);
-      }
+      if (enemyPoison > 0) enemy.takeDamage(enemyPoison);
       enemy.tickEffects();
     }
-
     this.checkEnemyDeath();
   }
 
   private endEnemyTurn(): void {
     if (!this.player) return;
-    // Don't start next turn if combat already ended
     if (this.phase === 'defeat' || this.phase === 'victory') return;
-
     this.player.resetBlock();
     for (const enemy of this.enemies) {
       if (enemy.isAlive) enemy.resetBlock();
     }
-
     this.startPlayerTurn();
   }
 
   private checkEnemyDeath(): void {
     this.enemies = this.enemies.filter((e) => e.isAlive);
-    if (this.enemies.length === 0) {
+    if (this.enemies.length === 0 && this.phase !== 'victory') {
       this.phase = 'victory';
+      this.awardCryptoBytes(this.currentNodeType);
       this.emit('game_over', { result: 'victory' });
       this.emit('state_changed');
     }
-    if (this.player && !this.player.isAlive) {
+    if (this.player && !this.player.isAlive && this.phase !== 'defeat') {
       this.phase = 'defeat';
       this.emit('game_over', { result: 'defeat' });
       this.emit('state_changed');

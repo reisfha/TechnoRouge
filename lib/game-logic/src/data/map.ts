@@ -1,3 +1,5 @@
+import { SeededRNG } from '../rng';
+
 export type NodeType = 'combat' | 'elite' | 'shop' | 'rest' | 'event' | 'boss';
 
 export interface MapNode {
@@ -20,52 +22,48 @@ export interface GameMap {
   act: number;
 }
 
-// Fixed 3-column layout (L=0, C=1, R=2) — each floor specifies exactly
-// which columns have nodes, creating deliberate branching paths.
 const COLUMN_PATTERN: number[][] = [
-  [1],       // floor  0: START  — single entry point
-  [0, 1, 2], // floor  1: branch into all three paths
-  [0, 2],    // floor  2: left & right diverge (no centre)
-  [0, 1, 2], // floor  3: all paths reconverge briefly
-  [0, 1],    // floor  4
-  [0, 2],    // floor  5
-  [1, 2],    // floor  6
-  [0, 1, 2], // floor  7: mid-act crossroads
-  [0, 2],    // floor  8
-  [0, 1],    // floor  9
-  [1, 2],    // floor 10
-  [0, 1, 2], // floor 11
-  [0, 2],    // floor 12
-  [1],       // floor 13: funnel toward boss
-  [1],       // floor 14: BOSS
+  [1],
+  [0, 1, 2],
+  [0, 2],
+  [0, 1, 2],
+  [0, 1],
+  [0, 2],
+  [1, 2],
+  [0, 1, 2],
+  [0, 2],
+  [0, 1],
+  [1, 2],
+  [0, 1, 2],
+  [0, 2],
+  [1],
+  [1],
 ];
 
 const NODE_TYPES_BY_FLOOR: Record<number, NodeType> = {
-  0: 'combat',   // always start with a fight
+  0: 'combat',
   14: 'boss',
 };
 
 const WEIGHTS: Partial<Record<NodeType, number>> = {
   combat: 45,
-  elite:  10,
-  shop:   10,
-  rest:   10,
-  event:  15,
+  elite: 10,
+  shop: 10,
+  rest: 10,
+  event: 15,
 };
 
-function rollType(floor: number): NodeType {
+function rollType(floor: number, rng: SeededRNG): NodeType {
   if (NODE_TYPES_BY_FLOOR[floor] !== undefined) return NODE_TYPES_BY_FLOOR[floor];
 
   const w = { ...WEIGHTS };
-  // Elites rarer early, more common late
-  if (floor <= 2)  w.elite = 5;
+  if (floor <= 2) w.elite = 5;
   if (floor >= 11) w.elite = 18;
-  // Extra rest/shop before boss
-  if (floor === 13) return Math.random() > 0.5 ? 'rest' : 'shop';
+  if (floor === 13) return rng.next() > 0.5 ? 'rest' : 'shop';
 
   const entries = Object.entries(w) as [NodeType, number][];
   const total = entries.reduce((s, [, v]) => s + v, 0);
-  let roll = Math.random() * total;
+  let roll = rng.next() * total;
   for (const [type, weight] of entries) {
     roll -= weight;
     if (roll <= 0) return type;
@@ -77,12 +75,13 @@ function id(floor: number, col: number): string {
   return `n_${floor}_${col}`;
 }
 
-export function generateMap(act: number = 1): GameMap {
+export function generateMap(act: number = 1, rng?: SeededRNG): GameMap {
+  const r = rng ?? new SeededRNG(Date.now());
   const layers: MapLayer[] = COLUMN_PATTERN.map((cols, floor) => ({
     floor,
     nodes: cols.map((col) => ({
       id: id(floor, col),
-      type: rollType(floor),
+      type: rollType(floor, r),
       floor,
       column: col,
       connections: [],
@@ -90,43 +89,34 @@ export function generateMap(act: number = 1): GameMap {
     })),
   }));
 
-  // Build connections: each node at column C connects to next-floor nodes
-  // at columns within 1 step of C.  We guarantee every next-floor node
-  // receives at least one incoming edge.
   for (let f = 0; f < layers.length - 1; f++) {
-    const cur  = layers[f];
+    const cur = layers[f];
     const next = layers[f + 1];
-    const nextCols = next.nodes.map((n) => n.column);
 
     for (const node of cur.nodes) {
       const targets = next.nodes.filter((n) => Math.abs(n.column - node.column) <= 1);
       if (targets.length === 0) {
-        // fallback: connect to nearest next-floor node
         const nearest = next.nodes.reduce((best, n) =>
           Math.abs(n.column - node.column) < Math.abs(best.column - node.column) ? n : best
         );
         node.connections.push(nearest.id);
       } else {
         for (const t of targets) {
-          // Always connect to same column; probabilistic for diagonals
-          if (t.column === node.column || Math.random() > 0.45) {
+          if (t.column === node.column || r.next() > 0.45) {
             node.connections.push(t.id);
           }
         }
-        // Ensure at least one connection
         if (node.connections.length === 0) {
-          const t = targets[Math.floor(Math.random() * targets.length)];
+          const t = targets[r.nextInt(0, targets.length)];
           node.connections.push(t.id);
         }
       }
       node.connections = [...new Set(node.connections)];
     }
 
-    // Ensure every next-floor node has at least one incoming edge
     for (const nextNode of next.nodes) {
       const hasIncoming = cur.nodes.some((n) => n.connections.includes(nextNode.id));
       if (!hasIncoming) {
-        // Connect the closest current node to it
         const donor = cur.nodes.reduce((best, n) =>
           Math.abs(n.column - nextNode.column) < Math.abs(best.column - nextNode.column) ? n : best
         );

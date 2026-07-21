@@ -1,5 +1,5 @@
 import { CardWidget } from './CardWidget';
-import { CardInstance } from '../entities/Card';
+import { CardInstance } from '@workspace/game-logic';
 
 const MAX_ROTATION_DEG = 24; // max total spread of the fan
 const BASE_ANGLE = 5;        // degrees per card

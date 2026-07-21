@@ -1,4 +1,4 @@
-import { Player } from '../entities/Player';
+import { Player } from '@workspace/game-logic';
 
 const EFFECT_COLORS: Record<string, string> = {
   poison:     '#44ff88',
