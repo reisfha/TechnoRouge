@@ -22,8 +22,8 @@ const config: Phaser.Types.Core.GameConfig = {
   scene: [BootScene, MenuScene, MapScene, CombatScene],
   input: {
     keyboard: true,
-    touch: true,
-    mouse: true,
+    touch: false,
+    mouse: false,
   },
 };
 

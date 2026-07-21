@@ -43,7 +43,11 @@
   --rarity-border: #3a3a5a;
   --rarity-glow: rgba(100,100,120,0.3);
 
-  pointer-events: all;            /* card receives clicks/hover */
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  pointer-events: all;
   position: relative;
   width: 120px;
   height: 178px;
@@ -52,14 +56,11 @@
   border-radius: 10px;
   padding: 0;
   cursor: pointer;
-  /* NO arc rotation here — wrapper handles it */
   transition:
     transform 0.18s cubic-bezier(0.25, 0.46, 0.45, 0.94),
     border-color 0.15s ease,
     box-shadow 0.15s ease,
     filter 0.15s ease;
-  display: flex;
-  flex-direction: column;
   font-family: 'Courier New', monospace;
   color: #ccc;
   user-select: none;
