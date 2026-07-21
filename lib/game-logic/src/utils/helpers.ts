@@ -1,4 +1,7 @@
-export function shuffleArray<T>(array: T[]): T[] {
+import { SeededRNG } from '../rng';
+
+export function shuffleArray<T>(array: T[], rng?: SeededRNG): T[] {
+  if (rng) return rng.shuffle(array);
   const arr = [...array];
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));

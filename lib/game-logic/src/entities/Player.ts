@@ -3,6 +3,7 @@ import { CardInstance } from './Card';
 import { getCardDef } from '../data/cards';
 import { DeckSystem } from '../systems/DeckSystem';
 import { EffectSystem } from '../systems/EffectSystem';
+import { SeededRNG } from '../rng';
 
 export class Player {
   maxHp: number;
@@ -18,6 +19,7 @@ export class Player {
 
   effects: ActiveEffect[];
   strength: number;
+  rng?: SeededRNG;
 
   static readonly MAX_HAND_SIZE = 10;
 
@@ -68,14 +70,16 @@ export class Player {
   }
 
   drawCards(count: number): CardInstance[] {
-    return DeckSystem.drawCards(this.drawPile, this.hand, this.discardPile, count);
+    return DeckSystem.drawCards(this.drawPile, this.hand, this.discardPile, count, this.rng);
   }
 
   drawFromDiscard(count: number): CardInstance[] {
     const drawn: CardInstance[] = [];
     for (let i = 0; i < count; i++) {
       if (this.discardPile.length === 0) break;
-      const randomIndex = Math.floor(Math.random() * this.discardPile.length);
+      const randomIndex = this.rng
+        ? this.rng.nextInt(0, this.discardPile.length)
+        : Math.floor(Math.random() * this.discardPile.length);
       const card = this.discardPile.splice(randomIndex, 1)[0];
       this.hand.push(card);
       drawn.push(card);

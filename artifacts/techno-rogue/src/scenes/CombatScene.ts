@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { Game } from '../Game';
+import { Game } from '@workspace/game-logic';
 import { HandDisplay } from '../ui/HandDisplay';
 import { PlayerHUD } from '../ui/PlayerHUD';
 import { EnemyDisplay } from '../ui/EnemyDisplay';

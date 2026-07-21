@@ -1,6 +1,5 @@
 import Phaser from 'phaser';
-import { Game } from '../Game';
-import { GameMap, NodeType, getReachableNodes, advanceToNode, getNode } from '../data/map';
+import { Game, GameMap, NodeType, getReachableNodes, advanceToNode, getNode } from '@workspace/game-logic';
 
 const NODE_ICONS: Record<NodeType, string> = {
   combat: '⚔',

@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { CLASS_DEFINITIONS } from '../data/classes';
+import { CLASS_DEFINITIONS } from '@workspace/game-logic';
 
 export class MenuScene extends Phaser.Scene {
   constructor() {

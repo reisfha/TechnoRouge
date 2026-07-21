@@ -1,4 +1,4 @@
-import { Enemy } from '../entities/Enemy';
+import { Enemy } from '@workspace/game-logic';
 
 const INTENT_DATA: Record<string, { icon: string; label: string; color: string }> = {
   attack: { icon: '⚔',  label: 'ATTACK',  color: '#ff4455' },
