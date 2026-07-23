@@ -1,17 +1,12 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView,
-  Dimensions, Modal,
+  useWindowDimensions, Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useGame } from '../context/GameContext';
 import { Colors } from '../constants/colors';
-
-const { width, height } = Dimensions.get('window');
-
-const CARD_W = Math.min((width - 32) / 3.5, 110);
-const CARD_H = CARD_W * 1.45;
 
 const CARD_TYPE_COLORS: Record<string, string> = {
   code: Colors.red,
@@ -48,6 +43,12 @@ const EFFECT_COLORS: Record<string, string> = {
 
 export default function CombatScreen() {
   const game = useGame();
+  const { width, height } = useWindowDimensions();
+  const isLandscape = width > height;
+  const CARD_W = isLandscape
+    ? Math.min((height - 80) / 5, Math.min((width - 64) / 6, 140))
+    : Math.min((width - 32) / 3.5, 120);
+  const CARD_H = CARD_W * 1.45;
   const [selectedCard, setSelectedCard] = useState<number | null>(null);
   const [showResult, setShowResult] = useState(false);
 
@@ -237,7 +238,7 @@ export default function CombatScreen() {
                 key={card.id}
                 style={[
                   styles.card,
-                  { borderColor: canPlay ? cardColor : Colors.border },
+                  { width: CARD_W, minHeight: CARD_H, borderColor: canPlay ? cardColor : Colors.border },
                   !canPlay && styles.cardUnplayable,
                   isSelected && styles.cardSelected,
                 ]}
@@ -258,7 +259,7 @@ export default function CombatScreen() {
                 </View>
 
                 {/* Card art area */}
-                <View style={[styles.cardArt, { borderColor: cardColor + '44' }]}>
+                <View style={[styles.cardArt, { height: CARD_W * 0.7, borderColor: cardColor + '44' }]}>
                   <Text style={[styles.cardArtSymbol, { color: cardColor }]}>
                     {card.type === 'code' ? '⟨/⟩' :
                      card.type === 'firewall' ? '◈' :
@@ -365,7 +366,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 12,
     gap: 16,
-    minHeight: 180,
   },
   enemyCard: {
     flex: 1,
@@ -470,8 +470,6 @@ const styles = StyleSheet.create({
 
   // Cards
   card: {
-    width: CARD_W,
-    minHeight: CARD_H,
     backgroundColor: Colors.bgCard,
     borderWidth: 2,
     borderRadius: 10,
@@ -490,7 +488,7 @@ const styles = StyleSheet.create({
   },
   costText: { fontFamily: 'Courier New', fontSize: 13, fontWeight: 'bold', color: Colors.bg },
   cardArt: {
-    width: '100%', height: CARD_W * 0.7,
+    width: '100%',
     borderWidth: 1, borderRadius: 6,
     alignItems: 'center', justifyContent: 'center',
     marginTop: 4, marginBottom: 4,
