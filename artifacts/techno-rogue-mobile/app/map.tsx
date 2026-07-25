@@ -1,3 +1,5 @@
+'use no memo';
+
 import React, { useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions,

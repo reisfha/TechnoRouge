@@ -15,7 +15,10 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.technorouge.app"
+      "bundleIdentifier": "com.technorouge.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.technorouge.app"
@@ -36,6 +39,11 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "b9437630-1b4c-41c5-a722-6d67e26df57f"
+      }
     }
   }
 }
