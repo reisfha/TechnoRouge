@@ -50,6 +50,10 @@ const EFFECT_COLORS: Record<string, string> = {
 };
 
 export default function CombatScreen() {
+  'use no memo'; // React Compiler opt-out: this screen reads the mutation-based
+  // Game singleton, whose arrays (player.hand, enemies) mutate in place with a
+  // stable reference. RC's memoization assumes immutability and would cache the
+  // initial empty hand forever, making drawn cards invisible.
   const game = useGame();
   const [selectedCard, setSelectedCard] = useState<number | null>(null);
   const [showResult, setShowResult] = useState(false);
