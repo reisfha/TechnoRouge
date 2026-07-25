@@ -5,7 +5,7 @@
   "packageManager": "pnpm@10.32.1",
   "main": "expo-router/entry",
   "scripts": {
-    "start": "node_modules/.bin/expo start --tunnel",
+    "start": "CI=1 npx expo start --tunnel --port 8081",
     "build": "echo 'Expo app — no build step needed'",
     "serve": "node server/serve.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
