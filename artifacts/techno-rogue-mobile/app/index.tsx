@@ -12,6 +12,7 @@ const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48) / 2;
 
 export default function MenuScreen() {
+  'use no memo'; // React Compiler opt-out: reads the mutation-based Game singleton.
   const game = useGame();
   const [selected, setSelected] = useState<string | null>(null);
 

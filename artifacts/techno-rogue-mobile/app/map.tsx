@@ -13,6 +13,8 @@ const COL_WIDTH = (width - 32) / 3;
 const NODE_SIZE = Math.min(COL_WIDTH - 12, 64);
 
 export default function MapScreen() {
+  'use no memo'; // React Compiler opt-out: reads the mutation-based Game
+  // singleton (player state mutates in place with a stable reference).
   const game = useGame();
 
   const map = game.map;

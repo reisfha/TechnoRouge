@@ -10,8 +10,11 @@ import { Colors } from '../constants/colors';
 
 const { width, height } = Dimensions.get('window');
 
-const CARD_W = Math.min((width - 32) / 3.5, 110);
-const CARD_H = CARD_W * 1.45;
+// Size cards off the SHORT (height) axis so they always fit the landscape
+// viewport. Deriving height from width alone let the fixed top/bottom bars
+// squeeze the flex:1 hand area to ~0px, clipping the cards to invisibility.
+const CARD_H = Math.max(112, Math.min(height * 0.42, 160));
+const CARD_W = Math.min(CARD_H / 1.5, (width - 32) / 3.5, 110);
 
 const CARD_TYPE_COLORS: Record<string, string> = {
   code: Colors.red,
@@ -47,6 +50,10 @@ const EFFECT_COLORS: Record<string, string> = {
 };
 
 export default function CombatScreen() {
+  'use no memo'; // React Compiler opt-out: this screen reads the mutation-based
+  // Game singleton, whose arrays (player.hand, enemies) mutate in place with a
+  // stable reference. RC's memoization assumes immutability and would cache the
+  // initial empty hand forever, making drawn cards invisible.
   const game = useGame();
   const [selectedCard, setSelectedCard] = useState<number | null>(null);
   const [showResult, setShowResult] = useState(false);
@@ -365,7 +372,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 12,
     gap: 16,
-    minHeight: 180,
+    flexShrink: 1,
   },
   enemyCard: {
     flex: 1,
@@ -457,6 +464,8 @@ const styles = StyleSheet.create({
   // Hand area
   handArea: {
     flex: 1,
+    flexShrink: 0,
+    minHeight: CARD_H + 24,
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 8,
