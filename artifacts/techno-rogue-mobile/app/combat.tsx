@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView,
+  View, Text, StyleSheet, TouchableOpacity,
   Dimensions, Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -12,11 +12,13 @@ import { Colors } from '../constants/colors';
 
 const { width, height } = Dimensions.get('window');
 
-// Size cards off the SHORT (height) axis so they always fit the landscape
-// viewport. Deriving height from width alone let the fixed top/bottom bars
-// squeeze the flex:1 hand area to ~0px, clipping the cards to invisibility.
-const CARD_H = Math.max(112, Math.min(height * 0.42, 160));
-const CARD_W = Math.min(CARD_H / 1.5, (width - 32) / 3.5, 110);
+// ── Card sizing: 2:3 ratio like STS ──────────────────────────
+const CARD_W = Math.max(76, Math.min(width * 0.13, 100));
+const CARD_H = CARD_W * 1.5;
+
+// ── Card fan math (matches web HandDisplay.ts) ────────────────
+const MAX_FAN_SPREAD = 24;
+const DEG_PER_CARD = 5;
 
 const CARD_TYPE_COLORS: Record<string, string> = {
   code: Colors.red,
@@ -25,6 +27,15 @@ const CARD_TYPE_COLORS: Record<string, string> = {
   virus: Colors.green,
   ice: Colors.yellow,
   protocol: Colors.text,
+};
+
+const CARD_TYPE_SYMBOLS: Record<string, string> = {
+  code: '</>',
+  firewall: '◈',
+  daemon: '⬡',
+  virus: '⬟',
+  ice: '◆',
+  protocol: '⊕',
 };
 
 const INTENT_ICONS: Record<string, string> = {
@@ -52,10 +63,7 @@ const EFFECT_COLORS: Record<string, string> = {
 };
 
 export default function CombatScreen() {
-  'use no memo'; // React Compiler opt-out: this screen reads the mutation-based
-  // Game singleton, whose arrays (player.hand, enemies) mutate in place with a
-  // stable reference. RC's memoization assumes immutability and would cache the
-  // initial empty hand forever, making drawn cards invisible.
+  'use no memo';
   const game = useGame();
   const [selectedCard, setSelectedCard] = useState<number | null>(null);
   const [showResult, setShowResult] = useState(false);
@@ -64,7 +72,6 @@ export default function CombatScreen() {
   const enemies = game.enemies;
   const phase = game.phase;
 
-  // Show result modal when combat ends
   React.useEffect(() => {
     if (phase === 'victory' || phase === 'defeat') {
       const timer = setTimeout(() => setShowResult(true), 400);
@@ -74,7 +81,6 @@ export default function CombatScreen() {
     }
   }, [phase]);
 
-  // Start combat whenever we land here without an active turn
   React.useEffect(() => {
     if (game.phase !== 'player_turn' && game.phase !== 'enemy_turn') {
       game.startCombat();
@@ -103,10 +109,15 @@ export default function CombatScreen() {
 
   const hpPct = Math.max(0, player.hp / player.maxHp);
   const isPlayerTurn = phase === 'player_turn';
+  const handCount = player.hand.length;
+
+  // Fan calculation
+  const totalSpread = Math.min(MAX_FAN_SPREAD, (handCount - 1) * DEG_PER_CARD);
+  const startAngle = -totalSpread / 2;
 
   return (
     <SafeAreaView style={styles.safe}>
-      {/* ── Enemy Section ─────────────────────────────── */}
+      {/* ── Enemy Section (upper ~45%) ──────────────────── */}
       <View style={styles.enemySection}>
         {enemies.map((enemy, idx) => {
           const eHpPct = Math.max(0, enemy.hp / enemy.maxHp);
@@ -128,7 +139,6 @@ export default function CombatScreen() {
               onPress={() => game.setTarget(idx)}
               activeOpacity={0.85}
             >
-              {/* Intent bubble */}
               {intent && (
                 <View style={[styles.intentBubble, { borderColor: intentColor }]}>
                   <Text style={[styles.intentIcon, { color: intentColor }]}>{intentIcon}</Text>
@@ -136,19 +146,18 @@ export default function CombatScreen() {
                 </View>
               )}
 
-              {/* Sprite */}
               <View style={[styles.enemySprite, { borderColor: Colors.red }]}>
                 <Text style={styles.enemySpriteGlyph}>⬡</Text>
               </View>
 
-              {/* Block */}
               {enemy.block > 0 && (
-                <Text style={styles.enemyBlock}>🛡 {enemy.block}</Text>
+                <View style={styles.blockPill}>
+                  <Text style={styles.blockPillText}>🛡 {enemy.block}</Text>
+                </View>
               )}
 
               <Text style={styles.enemyName}>{enemy.name}</Text>
 
-              {/* HP bar */}
               <View style={styles.enemyHpWrap}>
                 <View style={styles.hpBarBg}>
                   <View style={[styles.hpBarFill, { width: `${eHpPct * 100}%` as any, backgroundColor: Colors.red }]} />
@@ -156,7 +165,6 @@ export default function CombatScreen() {
                 <Text style={styles.enemyHpText}>{enemy.hp}/{enemy.maxHp}</Text>
               </View>
 
-              {/* Effects */}
               {enemy.effects.length > 0 && (
                 <View style={styles.effectRow}>
                   {enemy.effects.map((e) => (
@@ -173,80 +181,92 @@ export default function CombatScreen() {
         })}
       </View>
 
-      {/* ── Player Status Bar ──────────────────────────── */}
-      <View style={styles.playerBar}>
-        <View style={styles.playerLeft}>
-          {/* HP */}
-          <View style={styles.hpRow}>
-            <Text style={styles.hpIcon}>♥</Text>
-            <View style={styles.hpBarBg}>
-              <View style={[styles.hpBarFill, { width: `${hpPct * 100}%` as any, backgroundColor: Colors.hp }]} />
-            </View>
-            <Text style={styles.hpText}>{player.hp}/{player.maxHp}</Text>
-          </View>
-          {/* Block */}
-          {player.block > 0 && (
-            <Text style={styles.blockText}>🛡 {player.block}</Text>
-          )}
-          {/* Player effects */}
-          {player.effects.length > 0 && (
-            <View style={styles.effectRow}>
-              {player.effects.map((e) => (
-                <View key={e.id} style={[styles.effectBadge, { borderColor: EFFECT_COLORS[e.name] || Colors.textDim }]}>
-                  <Text style={[styles.effectText, { color: EFFECT_COLORS[e.name] || Colors.textDim }]}>
-                    {e.name.slice(0, 3).toUpperCase()} {e.stacks}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          )}
-        </View>
-
-        {/* Energy */}
-        <View style={styles.energyCol}>
-          <View style={styles.energyOrbs}>
-            {Array.from({ length: player.maxEnergy }).map((_, i) => (
-              <View key={i} style={[styles.orb, i >= player.energy && styles.orbSpent]} />
-            ))}
-          </View>
-          <Text style={styles.energyText}>{player.energy}/{player.maxEnergy}</Text>
-        </View>
-      </View>
-
-      {/* ── Phase indicator ────────────────────────────── */}
+      {/* ── Phase indicator ─────────────────────────────── */}
       {!isPlayerTurn && phase === 'enemy_turn' && (
         <View style={styles.phaseBanner}>
           <Text style={styles.phaseText}>ENEMY TURN</Text>
         </View>
       )}
 
-      {/* ── Hand ──────────────────────────────────────── */}
-      <View style={styles.handArea}>
-        {/* Draw / Discard counters */}
-        <View style={styles.deckInfo}>
+      {/* ── Bottom Panel: Player | Hand Fan | End Turn ──── */}
+      <View style={styles.bottomPanel}>
+        {/* ── Left column: Player stats + Draw pile ─────── */}
+        <View style={styles.leftCol}>
+          <View style={styles.playerStats}>
+            {/* HP bar */}
+            <View style={styles.hpRow}>
+              <Text style={styles.hpIcon}>♥</Text>
+              <View style={styles.hpBarBg}>
+                <View style={[styles.hpBarFill, { width: `${hpPct * 100}%` as any, backgroundColor: Colors.hp }]} />
+              </View>
+              <Text style={styles.hpText}>{player.hp}/{player.maxHp}</Text>
+            </View>
+
+            {/* Block */}
+            {player.block > 0 && (
+              <View style={styles.blockPill}>
+                <Text style={styles.blockPillText}>🛡 {player.block}</Text>
+              </View>
+            )}
+
+            {/* Effects */}
+            {player.effects.length > 0 && (
+              <View style={styles.effectRow}>
+                {player.effects.map((e) => (
+                  <View key={e.id} style={[styles.effectBadge, { borderColor: EFFECT_COLORS[e.name] || Colors.textDim }]}>
+                    <Text style={[styles.effectText, { color: EFFECT_COLORS[e.name] || Colors.textDim }]}>
+                      {e.name.slice(0, 3).toUpperCase()} {e.stacks}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            )}
+          </View>
+
+          {/* Draw pile */}
           <View style={styles.pileBox}>
+            <View style={styles.pileIcon}>
+              <Text style={styles.pileIconText}>▮</Text>
+            </View>
             <Text style={styles.pileCount}>{player.drawPile.length}</Text>
             <Text style={styles.pileLabel}>DRAW</Text>
           </View>
         </View>
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.handScrollView}
-          contentContainerStyle={styles.handScroll}
-        >
+        {/* ── Center: Card fan ──────────────────────────── */}
+        <View style={styles.fanContainer}>
           {player.hand.map((card, i) => {
             const canPlay = game.canPlayCard(i);
             const cardColor = CARD_TYPE_COLORS[card.type] || Colors.text;
             const isSelected = selectedCard === i;
+
+            // Fan position: centered spread
+            const cardAngle = handCount > 1
+              ? startAngle + i * DEG_PER_CARD
+              : 0;
+
+            // Horizontal offset: spread cards so they overlap
+            const overlap = CARD_W * 0.55;
+            const totalWidth = (handCount - 1) * overlap;
+            const offsetX = i * overlap - totalWidth / 2;
+
+            // Selected card lifts higher and un-rotates
+            const liftY = isSelected ? -28 : 0;
+            const finalAngle = isSelected ? 0 : cardAngle;
 
             return (
               <TouchableOpacity
                 key={card.id}
                 style={[
                   styles.card,
-                  { borderColor: canPlay ? cardColor : Colors.border },
+                  {
+                    borderColor: canPlay ? cardColor : Colors.border,
+                    transform: [
+                      { translateX: offsetX },
+                      { translateY: liftY },
+                      { rotate: `${finalAngle}deg` },
+                    ],
+                  },
                   !canPlay && styles.cardUnplayable,
                   isSelected && styles.cardSelected,
                 ]}
@@ -266,54 +286,64 @@ export default function CombatScreen() {
                   <Text style={styles.costText}>{card.cost}</Text>
                 </View>
 
-                {/* Card art area */}
+                {/* Card art */}
                 <View style={[styles.cardArt, { borderColor: cardColor + '44' }]}>
                   <Text style={[styles.cardArtSymbol, { color: cardColor }]}>
-                    {card.type === 'code' ? '⟨/⟩' :
-                     card.type === 'firewall' ? '◈' :
-                     card.type === 'daemon' ? '⬡' :
-                     card.type === 'virus' ? '⬟' :
-                     card.type === 'ice' ? '◆' : '⊕'}
+                    {CARD_TYPE_SYMBOLS[card.type] || '◆'}
                   </Text>
                 </View>
 
                 <Text style={styles.cardName} numberOfLines={1}>{card.name}</Text>
                 <Text style={styles.cardDesc} numberOfLines={2}>{card.description}</Text>
+
                 {card.def.exhaust && <Text style={styles.cardExhaust}>EXHAUST</Text>}
 
                 {isSelected && (
                   <View style={[styles.tapToPlay, { backgroundColor: cardColor }]}>
-                    <Text style={styles.tapToPlayText}>TAP TO PLAY</Text>
+                    <Text style={styles.tapToPlayText}>PLAY</Text>
                   </View>
                 )}
               </TouchableOpacity>
             );
           })}
-        </ScrollView>
+        </View>
 
-        <View style={styles.deckInfo}>
+        {/* ── Right column: Energy + End Turn + Discard ─── */}
+        <View style={styles.rightCol}>
+          {/* Energy */}
+          <View style={styles.energyBlock}>
+            <View style={styles.energyOrbs}>
+              {Array.from({ length: player.maxEnergy }).map((_, i) => (
+                <View key={i} style={[styles.orb, i >= player.energy && styles.orbSpent]} />
+              ))}
+            </View>
+            <Text style={styles.energyText}>{player.energy}/{player.maxEnergy}</Text>
+          </View>
+
+          {/* End Turn button */}
+          <TouchableOpacity
+            style={[styles.endTurnBtn, isPlayerTurn && styles.endTurnBtnActive]}
+            onPress={endTurn}
+            disabled={!isPlayerTurn}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.endTurnText, isPlayerTurn && styles.endTurnTextActive]}>
+              {isPlayerTurn ? 'END TURN' : '...'}
+            </Text>
+          </TouchableOpacity>
+
+          {/* Discard pile */}
           <View style={styles.pileBox}>
+            <View style={[styles.pileIcon, styles.pileIconDiscard]}>
+              <Text style={styles.pileIconText}>▭</Text>
+            </View>
             <Text style={styles.pileCount}>{player.discardPile.length}</Text>
             <Text style={styles.pileLabel}>DISC</Text>
           </View>
         </View>
       </View>
 
-      {/* ── End Turn Button ────────────────────────────── */}
-      <View style={styles.actionRow}>
-        <TouchableOpacity
-          style={[styles.endTurnBtn, isPlayerTurn && styles.endTurnBtnActive]}
-          onPress={endTurn}
-          disabled={!isPlayerTurn}
-          activeOpacity={0.8}
-        >
-          <Text style={[styles.endTurnText, isPlayerTurn && styles.endTurnTextActive]}>
-            {isPlayerTurn ? 'END TURN' : '...'}
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* ── Victory / Defeat Modal ─────────────────────── */}
+      {/* ── Victory / Defeat Modal ──────────────────────── */}
       <Modal visible={showResult} transparent animationType="fade">
         <View style={styles.modalBg}>
           <View style={styles.modalBox}>
@@ -367,25 +397,26 @@ const styles = StyleSheet.create({
     textAlign: 'center', marginTop: 40,
   },
 
-  // Enemy section
+  // ── Enemy section (upper ~45%) ─────────────────────
   enemySection: {
+    flex: 0.45,
     flexDirection: 'row',
     justifyContent: 'center',
+    alignItems: 'center',
     paddingHorizontal: 16,
-    paddingTop: 12,
-    gap: 16,
-    flexShrink: 1,
+    paddingTop: 4,
+    gap: 12,
   },
   enemyCard: {
     flex: 1,
-    maxWidth: 180,
+    maxWidth: 160,
     alignItems: 'center',
     backgroundColor: Colors.bgCard,
     borderWidth: 2,
     borderColor: Colors.border,
-    borderRadius: 12,
-    padding: 10,
-    gap: 6,
+    borderRadius: 10,
+    padding: 8,
+    gap: 4,
   },
   enemyCardSelected: {
     borderColor: Colors.red,
@@ -397,55 +428,102 @@ const styles = StyleSheet.create({
   intentBubble: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 3,
     borderWidth: 1,
     borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
     backgroundColor: Colors.bg,
   },
-  intentIcon: { fontSize: 14 },
-  intentValue: { fontFamily: 'Courier New', fontSize: 16, fontWeight: 'bold' },
+  intentIcon: { fontSize: 13 },
+  intentValue: { fontFamily: 'Courier New', fontSize: 14, fontWeight: 'bold' },
   enemySprite: {
-    width: 60, height: 60,
-    borderWidth: 3, borderRadius: 30,
+    width: 50, height: 50,
+    borderWidth: 2, borderRadius: 25,
     alignItems: 'center', justifyContent: 'center',
     backgroundColor: Colors.bgPanel,
   },
-  enemySpriteGlyph: { fontSize: 28, color: Colors.red },
-  enemyBlock: { fontFamily: 'Courier New', fontSize: 11, color: Colors.block },
-  enemyName: { fontFamily: 'Courier New', fontSize: 11, fontWeight: 'bold', color: Colors.text },
-  enemyHpWrap: { width: '100%', gap: 2 },
-  enemyHpText: { fontFamily: 'Courier New', fontSize: 10, color: Colors.textDim, textAlign: 'center' },
+  enemySpriteGlyph: { fontSize: 24, color: Colors.red },
+  enemyName: { fontFamily: 'Courier New', fontSize: 10, fontWeight: 'bold', color: Colors.text },
+  enemyHpWrap: { width: '100%', gap: 1 },
+  enemyHpText: { fontFamily: 'Courier New', fontSize: 9, color: Colors.textDim, textAlign: 'center' },
 
-  // Player bar
-  playerBar: {
+  // ── Block pill (shared) ────────────────────────────
+  blockPill: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    backgroundColor: Colors.cyan + '22',
+    borderWidth: 1,
+    borderColor: Colors.cyan + '66',
+    borderRadius: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  blockPillText: { fontFamily: 'Courier New', fontSize: 11, fontWeight: 'bold', color: Colors.block },
+
+  // ── Phase banner ───────────────────────────────────
+  phaseBanner: {
+    alignItems: 'center',
+    paddingVertical: 4,
+    backgroundColor: Colors.bgPanel,
+    borderTopWidth: 1, borderTopColor: Colors.border,
+    borderBottomWidth: 1, borderBottomColor: Colors.border,
+  },
+  phaseText: { fontFamily: 'Courier New', fontSize: 12, color: Colors.red, letterSpacing: 3 },
+
+  // ── Bottom panel (STS-style three-column) ──────────
+  bottomPanel: {
+    flex: 0.55,
+    flexDirection: 'row',
     borderTopWidth: 1,
     borderTopColor: Colors.border,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
   },
-  playerLeft: { gap: 4, flex: 1 },
-  hpRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  hpIcon: { fontSize: 14, color: Colors.hp },
+
+  // Left column: player stats + draw pile
+  leftCol: {
+    width: 120,
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+    paddingLeft: 10,
+    paddingRight: 4,
+  },
+  playerStats: {
+    gap: 4,
+  },
+  hpRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  hpIcon: { fontSize: 13, color: Colors.hp },
   hpBarBg: {
-    flex: 1, maxWidth: 120, height: 10,
+    flex: 1, height: 8,
     backgroundColor: Colors.bgPanel,
-    borderRadius: 5, overflow: 'hidden',
+    borderRadius: 4, overflow: 'hidden',
     borderWidth: 1, borderColor: Colors.border,
   },
-  hpBarFill: { height: '100%', borderRadius: 4 },
-  hpText: { fontFamily: 'Courier New', fontSize: 11, color: Colors.text, minWidth: 50 },
-  blockText: { fontFamily: 'Courier New', fontSize: 12, color: Colors.block },
-  effectRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 2 },
-  effectBadge: { borderWidth: 1, borderRadius: 4, paddingHorizontal: 5, paddingVertical: 1 },
-  effectText: { fontFamily: 'Courier New', fontSize: 9, fontWeight: 'bold' },
-  energyCol: { alignItems: 'center', gap: 4 },
+  hpBarFill: { height: '100%', borderRadius: 3 },
+  hpText: { fontFamily: 'Courier New', fontSize: 10, color: Colors.text, minWidth: 44 },
+
+  // Center: card fan
+  fanContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    paddingBottom: 4,
+    overflow: 'visible',
+    position: 'relative',
+  },
+
+  // Right column: energy + end turn + discard
+  rightCol: {
+    width: 120,
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingLeft: 4,
+    paddingRight: 10,
+  },
+  energyBlock: {
+    alignItems: 'center',
+    gap: 3,
+  },
   energyOrbs: { flexDirection: 'row', gap: 5 },
   orb: {
     width: 16, height: 16, borderRadius: 8,
@@ -455,91 +533,92 @@ const styles = StyleSheet.create({
   orbSpent: { backgroundColor: Colors.bgPanel, shadowOpacity: 0, elevation: 0, opacity: 0.3 },
   energyText: { fontFamily: 'Courier New', fontSize: 11, color: Colors.energy, fontWeight: 'bold' },
 
-  // Phase banner
-  phaseBanner: {
-    alignItems: 'center', paddingVertical: 6,
-    backgroundColor: Colors.bgPanel,
-    borderBottomWidth: 1, borderBottomColor: Colors.border,
-  },
-  phaseText: { fontFamily: 'Courier New', fontSize: 13, color: Colors.red, letterSpacing: 3 },
-
-  // Hand area
-  handArea: {
-    flex: 1,
-    flexShrink: 0,
-    minHeight: CARD_H + 24,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
-  deckInfo: { paddingHorizontal: 6, alignItems: 'center' },
+  // Pile boxes (shared)
   pileBox: { alignItems: 'center', gap: 2 },
-  pileCount: { fontFamily: 'Courier New', fontSize: 16, fontWeight: 'bold', color: Colors.text },
-  pileLabel: { fontFamily: 'Courier New', fontSize: 8, color: Colors.textDim, letterSpacing: 1 },
-  handScroll: { paddingHorizontal: 4, gap: 8, alignItems: 'center' },
-  handScrollView: { flex: 1 },
+  pileIcon: {
+    width: 28, height: 36, borderRadius: 4,
+    backgroundColor: Colors.bgCard,
+    borderWidth: 1, borderColor: Colors.border,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  pileIconDiscard: { borderColor: Colors.textDim + '44' },
+  pileIconText: { fontSize: 14, color: Colors.textDim },
+  pileCount: { fontFamily: 'Courier New', fontSize: 14, fontWeight: 'bold', color: Colors.text },
+  pileLabel: { fontFamily: 'Courier New', fontSize: 7, color: Colors.textDim, letterSpacing: 1 },
 
-  // Cards
+  // ── Effects (shared) ───────────────────────────────
+  effectRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 3, marginTop: 2 },
+  effectBadge: { borderWidth: 1, borderRadius: 4, paddingHorizontal: 4, paddingVertical: 1 },
+  effectText: { fontFamily: 'Courier New', fontSize: 8, fontWeight: 'bold' },
+
+  // ── Cards ──────────────────────────────────────────
   card: {
     width: CARD_W,
-    minHeight: CARD_H,
+    height: CARD_H,
     backgroundColor: Colors.bgCard,
     borderWidth: 2,
-    borderRadius: 10,
-    padding: 8,
+    borderRadius: 8,
+    padding: 6,
     alignItems: 'center',
-    position: 'relative',
+    position: 'absolute',
+    bottom: 0,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOpacity: 0.4,
+    shadowRadius: 6,
+    elevation: 4,
   },
-  cardUnplayable: { opacity: 0.45 },
-  cardSelected: { transform: [{ translateY: -12 }], elevation: 8, shadowOpacity: 0.5, shadowRadius: 10 },
+  cardUnplayable: { opacity: 0.35 },
+  cardSelected: {
+    elevation: 10,
+    shadowOpacity: 0.6,
+    shadowRadius: 12,
+  },
   costBadge: {
-    position: 'absolute', top: -2, left: -2,
-    width: 26, height: 26, borderRadius: 13,
+    position: 'absolute', top: -1, left: -1,
+    width: 22, height: 22, borderRadius: 11,
     alignItems: 'center', justifyContent: 'center',
     zIndex: 2,
   },
-  costText: { fontFamily: 'Courier New', fontSize: 13, fontWeight: 'bold', color: Colors.bg },
+  costText: { fontFamily: 'Courier New', fontSize: 12, fontWeight: 'bold', color: Colors.bg },
   cardArt: {
-    width: '100%', height: CARD_W * 0.7,
-    borderWidth: 1, borderRadius: 6,
+    width: '100%',
+    height: CARD_W * 0.65,
+    borderWidth: 1, borderRadius: 5,
     alignItems: 'center', justifyContent: 'center',
-    marginTop: 4, marginBottom: 4,
+    marginTop: 2, marginBottom: 2,
     backgroundColor: Colors.bgPanel,
   },
-  cardArtSymbol: { fontSize: 24 },
+  cardArtSymbol: { fontSize: 22 },
   cardName: {
-    fontFamily: 'Courier New', fontSize: 10, fontWeight: 'bold',
+    fontFamily: 'Courier New', fontSize: 9, fontWeight: 'bold',
     color: Colors.text, textAlign: 'center',
   },
   cardDesc: {
-    fontFamily: 'Courier New', fontSize: 8.5,
-    color: Colors.textDim, textAlign: 'center', lineHeight: 12,
-    marginTop: 2,
+    fontFamily: 'Courier New', fontSize: 7.5,
+    color: Colors.textDim, textAlign: 'center', lineHeight: 10,
+    marginTop: 1,
   },
   cardExhaust: {
-    fontFamily: 'Courier New', fontSize: 7,
-    color: Colors.yellow, marginTop: 2, opacity: 0.8,
+    fontFamily: 'Courier New', fontSize: 6.5,
+    color: Colors.yellow, marginTop: 1, opacity: 0.8,
   },
   tapToPlay: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
-    paddingVertical: 4, alignItems: 'center',
+    paddingVertical: 3, alignItems: 'center',
   },
   tapToPlayText: { fontFamily: 'Courier New', fontSize: 8, fontWeight: 'bold', color: Colors.bg, letterSpacing: 1 },
 
-  // Action row
-  actionRow: {
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    paddingTop: 6,
-  },
+  // ── End turn button ────────────────────────────────
   endTurnBtn: {
     borderWidth: 2,
     borderColor: Colors.border,
     borderRadius: 8,
-    paddingVertical: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
     alignItems: 'center',
     backgroundColor: Colors.bgPanel,
+    width: '100%',
   },
   endTurnBtnActive: {
     borderColor: Colors.cyan,
@@ -549,12 +628,12 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   endTurnText: {
-    fontFamily: 'Courier New', fontSize: 14, fontWeight: 'bold',
-    color: Colors.textDim, letterSpacing: 3,
+    fontFamily: 'Courier New', fontSize: 12, fontWeight: 'bold',
+    color: Colors.textDim, letterSpacing: 2,
   },
   endTurnTextActive: { color: Colors.cyan },
 
-  // Modal
+  // ── Modal ──────────────────────────────────────────
   modalBg: {
     flex: 1, backgroundColor: 'rgba(0,0,0,0.85)',
     alignItems: 'center', justifyContent: 'center',
