@@ -28,9 +28,7 @@ html, body {
   pointer-events: none;
 }
 
-#ui-overlay > * {
-  pointer-events: all;
-}
+
 
 .menu-container {
   position: absolute;
