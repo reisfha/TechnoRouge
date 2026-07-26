@@ -1,8 +1,5 @@
-[phases.setup]
-nixPkgs = ["nodejs_20", "pnpm"]
-
 [phases.install]
-cmds = ["mkdir -p lib/integrations", "pnpm install --frozen-lockfile"]
+cmds = ["COREPACK_ENABLE_STRICT=0 corepack disable || true", "pnpm install --frozen-lockfile"]
 
 [phases.build]
 cmds = ["echo 'Skipping static build - Metro builds on demand'"]
