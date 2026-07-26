@@ -4,5 +4,8 @@ nixPkgs = ["nodejs_20", "pnpm"]
 [phases.install]
 cmds = ["mkdir -p lib/integrations", "pnpm install --frozen-lockfile"]
 
+[phases.build]
+cmds = ["echo 'Skipping static build - Metro builds on demand'"]
+
 [start]
 cmd = "cd artifacts/techno-rogue-mobile && CI=1 npx expo start --non-interactive"
