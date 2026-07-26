@@ -1,8 +1,9 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Platform } from 'react-native';
 import { GameProvider } from '../context/GameContext';
 import { Colors } from '../constants/colors';
+import { WebExpoPopup } from '../components/WebExpoPopup';
 
 export default function RootLayout() {
   return (
@@ -20,6 +21,7 @@ export default function RootLayout() {
           <Stack.Screen name="map" />
           <Stack.Screen name="combat" />
         </Stack>
+        {Platform.OS === 'web' && <WebExpoPopup />}
       </View>
     </GameProvider>
   );
