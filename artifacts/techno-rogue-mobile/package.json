@@ -5,8 +5,8 @@
   "packageManager": "pnpm@10.32.1",
   "main": "expo-router/entry",
   "scripts": {
-    "start": "npx serve dist --listen ${PORT:-3000}",
-    "build": "npx expo export --platform web",
+    "start": "CI=1 npx expo start --port ${PORT:-3000} --non-interactive",
+    "build": "echo 'Metro builds on-demand, no static export needed'",
     "serve": "node server/serve.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "eas:build": "eas build",
