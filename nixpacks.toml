@@ -1,5 +1,5 @@
 [phases.install]
-cmds = ["COREPACK_ENABLE_STRICT=0 corepack disable || true", "pnpm install --frozen-lockfile"]
+cmds = ["corepack disable || true", "pnpm install"]
 
 [phases.build]
 cmds = ["echo 'Skipping static build - Metro builds on demand'"]

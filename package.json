@@ -10,7 +10,7 @@
     "typecheck:libs": "tsc --build",
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck"
   },
-  "packageManager": "pnpm@12.0.0-alpha.21+sha512.e98756339fc4b3a1bf067e1d72a1c9879d3a1e47e7f151a943ff6fb291de62eefde4b6b9c2087680c2bb9146f9f1dfd4f2cf1f8f5315a20957c859e8afd6b5f4",
+  "packageManager": "pnpm@10.32.1",
   "private": true,
   "dependencies": {
     "@replit/connectors-sdk": "^0.4.1"
