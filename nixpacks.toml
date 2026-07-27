@@ -1,0 +1,5 @@
+[phases.build]
+cmds = ["echo 'Skipping static build - Metro builds on demand'"]
+
+[start]
+cmd = "cd artifacts/techno-rogue-mobile && CI=1 npx expo start --tunnel --port $PORT"
