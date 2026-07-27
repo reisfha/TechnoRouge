@@ -1,9 +1,9 @@
 'use no memo';
 
-import React, { useState } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  Dimensions, Modal,
+  Dimensions, Modal, Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -12,11 +12,8 @@ import { Colors } from '../constants/colors';
 
 const { width } = Dimensions.get('window');
 
-// ── Card sizing: 2:3 ratio like STS ──────────────────────────
 const CARD_W = Math.max(76, Math.min(width * 0.13, 100));
 const CARD_H = CARD_W * 1.5;
-
-// ── Card fan math (matches web HandDisplay.ts) ────────────────
 const MAX_FAN_SPREAD = 24;
 const DEG_PER_CARD = 5;
 
@@ -62,35 +59,140 @@ const EFFECT_COLORS: Record<string, string> = {
   fortify: Colors.cyan,
 };
 
-export default function CombatScreen() {
-  'use no memo';
+type TutorialStep =
+  | 'welcome'
+  | 'explain_intent'
+  | 'explain_cards'
+  | 'play_attack'
+  | 'play_defend'
+  | 'explain_energy'
+  | 'end_turn'
+  | 'enemy_turn'
+  | 'your_turn'
+  | 'free_play'
+  | 'victory';
+
+const STEP_MESSAGES: Record<TutorialStep, string> = {
+  welcome: 'Welcome to combat! You are facing a Patrol ICE.',
+  explain_intent: 'See the ⚔ above the enemy? It will attack for 6 damage next turn.',
+  explain_cards: 'Your cards are at the bottom. Red = attack, Blue = defense.',
+  play_attack: 'Tap an ATTACK card to deal damage!',
+  play_defend: 'Now tap a DEFEND card to gain block (shield).',
+  explain_energy: 'Each card costs energy (⚡). You have 3 per turn.',
+  end_turn: 'Tap END TURN when you are done playing cards.',
+  enemy_turn: 'The enemy is acting...',
+  your_turn: 'Your turn again! Keep playing cards to win.',
+  free_play: 'Play cards freely to finish the fight.',
+  victory: 'Combat complete! You defeated the Patrol ICE.',
+};
+
+export default function TutorialCombatScreen() {
   const game = useGame();
   const [selectedCard, setSelectedCard] = useState<number | null>(null);
   const [showResult, setShowResult] = useState(false);
+  const [tutorialStep, setTutorialStep] = useState<TutorialStep>('welcome');
+  const [showTip, setShowTip] = useState(true);
+  const tipOpacity = useRef(new Animated.Value(1)).current;
+  const stepIndexRef = useRef(0);
+  const advanceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const player = game.player;
   const enemies = game.enemies;
   const phase = game.phase;
 
-  React.useEffect(() => {
-    if (phase === 'victory' || phase === 'defeat') {
-      const timer = setTimeout(() => setShowResult(true), 400);
-      return () => clearTimeout(timer);
-    } else {
-      setShowResult(false);
-    }
-  }, [phase]);
+  const flashTip = useCallback(() => {
+    tipOpacity.setValue(0);
+    setShowTip(true);
+    Animated.timing(tipOpacity, {
+      toValue: 1,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+  }, [tipOpacity]);
 
-  React.useEffect(() => {
-    if (game.phase !== 'player_turn' && game.phase !== 'enemy_turn') {
-      game.startCombat();
+  const advanceStep = useCallback((step: TutorialStep) => {
+    setTutorialStep(step);
+    stepIndexRef.current = Object.keys(STEP_MESSAGES).indexOf(step);
+    flashTip();
+  }, [flashTip]);
+
+  const scheduleAdvance = useCallback((step: TutorialStep, delay: number) => {
+    if (advanceTimeoutRef.current) clearTimeout(advanceTimeoutRef.current);
+    advanceTimeoutRef.current = setTimeout(() => advanceStep(step), delay);
+  }, [advanceStep]);
+
+  // Start combat with a weak tutorial enemy
+  useEffect(() => {
+    game.startRun('netrunner');
+    game.spawnEnemies('combat');
+    if (game.enemies[0]) {
+      game.enemies[0].hp = 10;
+      game.enemies[0].maxHp = 10;
     }
+    game.startCombat();
   }, []);
+
+  // Listen for game events to advance tutorial
+  useEffect(() => {
+    const onCardPlayed = (_event: any, data: any) => {
+      const card = data?.card;
+      if (!card) return;
+      const cardType = card.type as string;
+
+      if (tutorialStep === 'play_attack' && cardType === 'code') {
+        scheduleAdvance('play_defend', 600);
+      } else if (tutorialStep === 'play_defend' && cardType === 'firewall') {
+        scheduleAdvance('explain_energy', 600);
+      } else if (tutorialStep === 'free_play' || tutorialStep === 'your_turn') {
+        // free play, no advancement needed
+      }
+    };
+
+    const onTurnChanged = (_event: any, data: any) => {
+      if (data?.phase === 'enemy_turn') {
+        scheduleAdvance('enemy_turn', 300);
+      } else if (data?.phase === 'player_turn' && stepIndexRef.current >= 6) {
+        if (tutorialStep === 'enemy_turn' || tutorialStep === 'your_turn') {
+          scheduleAdvance('your_turn', 500);
+          setTimeout(() => advanceStep('free_play'), 2000);
+        }
+      }
+    };
+
+    const onGameOver = (_event: any, data: any) => {
+      if (data?.result === 'victory') {
+        advanceStep('victory');
+        setTimeout(() => setShowResult(true), 800);
+      }
+    };
+
+    game.on('card_played', onCardPlayed);
+    game.on('turn_changed', onTurnChanged);
+    game.on('game_over', onGameOver);
+
+    return () => {
+      game.off('card_played', onCardPlayed);
+      game.off('turn_changed', onTurnChanged);
+      game.off('game_over', onGameOver);
+      if (advanceTimeoutRef.current) clearTimeout(advanceTimeoutRef.current);
+    };
+  }, [tutorialStep, scheduleAdvance, advanceStep]);
+
+  // Auto-advance initial steps
+  useEffect(() => {
+    if (tutorialStep === 'welcome') {
+      scheduleAdvance('explain_intent', 1500);
+    } else if (tutorialStep === 'explain_intent') {
+      scheduleAdvance('explain_cards', 2500);
+    } else if (tutorialStep === 'explain_cards') {
+      scheduleAdvance('play_attack', 2000);
+    }
+  }, [tutorialStep, scheduleAdvance]);
 
   if (!player) {
     return (
       <SafeAreaView style={styles.safe}>
-        <Text style={styles.loadingText}>INITIALIZING COMBAT...</Text>
+        <Text style={styles.loadingText}>INITIALIZING TUTORIAL...</Text>
       </SafeAreaView>
     );
   }
@@ -110,14 +212,28 @@ export default function CombatScreen() {
   const hpPct = Math.max(0, player.hp / player.maxHp);
   const isPlayerTurn = phase === 'player_turn';
   const handCount = player.hand.length;
-
-  // Fan calculation
   const totalSpread = Math.min(MAX_FAN_SPREAD, (handCount - 1) * DEG_PER_CARD);
   const startAngle = -totalSpread / 2;
 
+  const highlightAttack = tutorialStep === 'play_attack';
+  const highlightDefend = tutorialStep === 'play_defend';
+  const highlightEndTurn = tutorialStep === 'end_turn';
+
   return (
     <SafeAreaView style={styles.safe}>
-      {/* ── Enemy Section (upper ~45%) ──────────────────── */}
+      {/* Tutorial message banner */}
+      {showTip && (
+        <Animated.View style={[styles.tipBanner, { opacity: tipOpacity }]}>
+          <Text style={styles.tipText}>{STEP_MESSAGES[tutorialStep]}</Text>
+          {tutorialStep === 'free_play' && (
+            <TouchableOpacity onPress={() => setShowTip(false)}>
+              <Text style={styles.tipDismiss}>✕</Text>
+            </TouchableOpacity>
+          )}
+        </Animated.View>
+      )}
+
+      {/* Enemy Section */}
       <View style={styles.enemySection}>
         {enemies.map((enemy, idx) => {
           const eHpPct = Math.max(0, enemy.hp / enemy.maxHp);
@@ -181,19 +297,18 @@ export default function CombatScreen() {
         })}
       </View>
 
-      {/* ── Phase indicator ─────────────────────────────── */}
+      {/* Phase indicator */}
       {!isPlayerTurn && phase === 'enemy_turn' && (
         <View style={styles.phaseBanner}>
           <Text style={styles.phaseText}>ENEMY TURN</Text>
         </View>
       )}
 
-      {/* ── Bottom Panel: Player | Hand Fan | End Turn ──── */}
+      {/* Bottom Panel */}
       <View style={styles.bottomPanel}>
-        {/* ── Left column: Player stats + Draw pile ─────── */}
+        {/* Left column: Player stats + Draw pile */}
         <View style={styles.leftCol}>
           <View style={styles.playerStats}>
-            {/* HP bar */}
             <View style={styles.hpRow}>
               <Text style={styles.hpIcon}>♥</Text>
               <View style={styles.hpBarBg}>
@@ -202,14 +317,12 @@ export default function CombatScreen() {
               <Text style={styles.hpText}>{player.hp}/{player.maxHp}</Text>
             </View>
 
-            {/* Block */}
             {player.block > 0 && (
               <View style={styles.blockPill}>
                 <Text style={styles.blockPillText}>🛡 {player.block}</Text>
               </View>
             )}
 
-            {/* Effects */}
             {player.effects.length > 0 && (
               <View style={styles.effectRow}>
                 {player.effects.map((e) => (
@@ -223,7 +336,6 @@ export default function CombatScreen() {
             )}
           </View>
 
-          {/* Draw pile */}
           <View style={styles.pileBox}>
             <View style={styles.pileIcon}>
               <Text style={styles.pileIconText}>▮</Text>
@@ -233,26 +345,27 @@ export default function CombatScreen() {
           </View>
         </View>
 
-        {/* ── Center: Card fan ──────────────────────────── */}
+        {/* Center: Card fan */}
         <View style={styles.fanContainer}>
           {player.hand.map((card, i) => {
             const canPlay = game.canPlayCard(i);
             const cardColor = CARD_TYPE_COLORS[card.type] || Colors.text;
             const isSelected = selectedCard === i;
 
-            // Fan position: centered spread
             const cardAngle = handCount > 1
               ? startAngle + i * DEG_PER_CARD
               : 0;
-
-            // Horizontal offset: spread cards so they overlap
             const overlap = CARD_W * 0.55;
             const totalWidth = (handCount - 1) * overlap;
             const offsetX = i * overlap - totalWidth / 2;
-
-            // Selected card lifts higher and un-rotates
             const liftY = isSelected ? -28 : 0;
             const finalAngle = isSelected ? 0 : cardAngle;
+
+            // Tutorial highlights
+            const isAttack = card.type === 'code';
+            const isDefend = card.type === 'firewall';
+            const isHighlighted = (highlightAttack && isAttack && canPlay)
+              || (highlightDefend && isDefend && canPlay);
 
             return (
               <TouchableOpacity
@@ -260,7 +373,9 @@ export default function CombatScreen() {
                 style={[
                   styles.card,
                   {
-                    borderColor: canPlay ? cardColor : Colors.border,
+                    borderColor: isHighlighted
+                      ? Colors.yellow
+                      : canPlay ? cardColor : Colors.border,
                     transform: [
                       { translateX: offsetX },
                       { translateY: liftY },
@@ -269,6 +384,7 @@ export default function CombatScreen() {
                   },
                   !canPlay && styles.cardUnplayable,
                   isSelected && styles.cardSelected,
+                  isHighlighted && styles.cardHighlighted,
                 ]}
                 onPress={() => {
                   if (!canPlay) return;
@@ -281,13 +397,11 @@ export default function CombatScreen() {
                 onLongPress={() => canPlay && playCard(i)}
                 activeOpacity={canPlay ? 0.85 : 1}
               >
-                {/* Cost badge */}
                 <View style={[styles.costBadge, { backgroundColor: cardColor }]}>
                   <Text style={styles.costText}>{card.cost}</Text>
                 </View>
 
-                {/* Card art */}
-                <View style={[styles.cardArt, { borderColor: cardColor + '44' }]}>
+                <View style={[styles.cardArt, { borderColor: `${cardColor}44` }]}>
                   <Text style={[styles.cardArtSymbol, { color: cardColor }]}>
                     {CARD_TYPE_SYMBOLS[card.type] || '◆'}
                   </Text>
@@ -308,9 +422,8 @@ export default function CombatScreen() {
           })}
         </View>
 
-        {/* ── Right column: Energy + End Turn + Discard ─── */}
+        {/* Right column: Energy + End Turn + Discard */}
         <View style={styles.rightCol}>
-          {/* Energy */}
           <View style={styles.energyBlock}>
             <View style={styles.energyOrbs}>
               {Array.from({ length: player.maxEnergy }).map((_, i) => (
@@ -320,19 +433,25 @@ export default function CombatScreen() {
             <Text style={styles.energyText}>{player.energy}/{player.maxEnergy}</Text>
           </View>
 
-          {/* End Turn button */}
           <TouchableOpacity
-            style={[styles.endTurnBtn, isPlayerTurn && styles.endTurnBtnActive]}
+            style={[
+              styles.endTurnBtn,
+              isPlayerTurn && styles.endTurnBtnActive,
+              highlightEndTurn && styles.endTurnBtnHighlighted,
+            ]}
             onPress={endTurn}
             disabled={!isPlayerTurn}
             activeOpacity={0.8}
           >
-            <Text style={[styles.endTurnText, isPlayerTurn && styles.endTurnTextActive]}>
+            <Text style={[
+              styles.endTurnText,
+              isPlayerTurn && styles.endTurnTextActive,
+              highlightEndTurn && styles.endTurnTextHighlighted,
+            ]}>
               {isPlayerTurn ? 'END TURN' : '...'}
             </Text>
           </TouchableOpacity>
 
-          {/* Discard pile */}
           <View style={styles.pileBox}>
             <View style={[styles.pileIcon, styles.pileIconDiscard]}>
               <Text style={styles.pileIconText}>▭</Text>
@@ -343,46 +462,19 @@ export default function CombatScreen() {
         </View>
       </View>
 
-      {/* ── Victory / Defeat Modal ──────────────────────── */}
+      {/* Victory Modal */}
       <Modal visible={showResult} transparent animationType="fade">
         <View style={styles.modalBg}>
           <View style={styles.modalBox}>
-            {phase === 'victory' ? (
-              <>
-                <Text style={[styles.modalTitle, { color: Colors.green }]}>SYSTEM BREACHED</Text>
-                <Text style={styles.modalSub}>You cracked the mainframe.</Text>
-                <Text style={styles.modalCb}>+{game.cryptoBytes} CB earned</Text>
-                <TouchableOpacity
-                  style={[styles.modalBtn, { borderColor: Colors.green }]}
-                  onPress={() => { setShowResult(false); router.replace('/map'); }}
-                >
-                  <Text style={[styles.modalBtnText, { color: Colors.green }]}>CONTINUE</Text>
-                </TouchableOpacity>
-              </>
-            ) : (
-              <>
-                <Text style={[styles.modalTitle, { color: Colors.red }]}>JACKED OUT</Text>
-                <Text style={styles.modalSub}>The system was too strong.</Text>
-                <TouchableOpacity
-                  style={[styles.modalBtn, { borderColor: Colors.red }]}
-                  onPress={() => {
-                    setShowResult(false);
-                    const className = game.classDef?.id ?? 'netrunner';
-                    game.startRun(className);
-                    game.generateMap();
-                    router.replace('/map');
-                  }}
-                >
-                  <Text style={[styles.modalBtnText, { color: Colors.red }]}>TRY AGAIN</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.modalBtn, { borderColor: Colors.border, marginTop: 0 }]}
-                  onPress={() => { setShowResult(false); router.replace('/'); }}
-                >
-                  <Text style={[styles.modalBtnText, { color: Colors.textDim }]}>MAIN MENU</Text>
-                </TouchableOpacity>
-              </>
-            )}
+            <Text style={[styles.modalTitle, { color: Colors.green }]}>TUTORIAL COMPLETE</Text>
+            <Text style={styles.modalSub}>You learned the basics of combat.</Text>
+            <Text style={styles.modalTip}>Try the main game to test your skills!</Text>
+            <TouchableOpacity
+              style={[styles.modalBtn, { borderColor: Colors.cyan }]}
+              onPress={() => { setShowResult(false); router.replace('/'); }}
+            >
+              <Text style={[styles.modalBtnText, { color: Colors.cyan }]}>MAIN MENU</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -397,7 +489,33 @@ const styles = StyleSheet.create({
     textAlign: 'center', marginTop: 40,
   },
 
-  // ── Enemy section (upper ~45%) ─────────────────────
+  // ── Tutorial tip banner ──────────────────────────
+  tipBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: Colors.bgPanel,
+    borderBottomWidth: 1,
+    borderBottomColor: `${Colors.yellow}66`,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    gap: 8,
+  },
+  tipText: {
+    flex: 1,
+    fontFamily: 'Courier New',
+    fontSize: 11,
+    color: Colors.yellow,
+    lineHeight: 16,
+  },
+  tipDismiss: {
+    fontFamily: 'Courier New',
+    fontSize: 14,
+    color: Colors.textDim,
+    paddingHorizontal: 4,
+  },
+
+  // ── Enemy section ────────────────────────────────
   enemySection: {
     flex: 0.45,
     flexDirection: 'row',
@@ -448,7 +566,7 @@ const styles = StyleSheet.create({
   enemyHpWrap: { width: '100%', gap: 1 },
   enemyHpText: { fontFamily: 'Courier New', fontSize: 9, color: Colors.textDim, textAlign: 'center' },
 
-  // ── Block pill (shared) ────────────────────────────
+  // ── Block pill ───────────────────────────────────
   blockPill: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -461,7 +579,7 @@ const styles = StyleSheet.create({
   },
   blockPillText: { fontFamily: 'Courier New', fontSize: 11, fontWeight: 'bold', color: Colors.block },
 
-  // ── Phase banner ───────────────────────────────────
+  // ── Phase banner ─────────────────────────────────
   phaseBanner: {
     alignItems: 'center',
     paddingVertical: 4,
@@ -471,7 +589,7 @@ const styles = StyleSheet.create({
   },
   phaseText: { fontFamily: 'Courier New', fontSize: 12, color: Colors.red, letterSpacing: 3 },
 
-  // ── Bottom panel (STS-style three-column) ──────────
+  // ── Bottom panel ─────────────────────────────────
   bottomPanel: {
     flex: 0.55,
     flexDirection: 'row',
@@ -479,7 +597,6 @@ const styles = StyleSheet.create({
     borderTopColor: Colors.border,
   },
 
-  // Left column: player stats + draw pile
   leftCol: {
     width: 120,
     justifyContent: 'space-between',
@@ -487,9 +604,7 @@ const styles = StyleSheet.create({
     paddingLeft: 10,
     paddingRight: 4,
   },
-  playerStats: {
-    gap: 4,
-  },
+  playerStats: { gap: 4 },
   hpRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   hpIcon: { fontSize: 13, color: Colors.hp },
   hpBarBg: {
@@ -501,7 +616,6 @@ const styles = StyleSheet.create({
   hpBarFill: { height: '100%', borderRadius: 3 },
   hpText: { fontFamily: 'Courier New', fontSize: 10, color: Colors.text, minWidth: 44 },
 
-  // Center: card fan
   fanContainer: {
     flex: 1,
     alignItems: 'center',
@@ -511,7 +625,6 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
 
-  // Right column: energy + end turn + discard
   rightCol: {
     width: 120,
     justifyContent: 'space-between',
@@ -520,10 +633,7 @@ const styles = StyleSheet.create({
     paddingLeft: 4,
     paddingRight: 10,
   },
-  energyBlock: {
-    alignItems: 'center',
-    gap: 3,
-  },
+  energyBlock: { alignItems: 'center', gap: 3 },
   energyOrbs: { flexDirection: 'row', gap: 5 },
   orb: {
     width: 16, height: 16, borderRadius: 8,
@@ -533,7 +643,6 @@ const styles = StyleSheet.create({
   orbSpent: { backgroundColor: Colors.bgPanel, shadowOpacity: 0, elevation: 0, opacity: 0.3 },
   energyText: { fontFamily: 'Courier New', fontSize: 11, color: Colors.energy, fontWeight: 'bold' },
 
-  // Pile boxes (shared)
   pileBox: { alignItems: 'center', gap: 2 },
   pileIcon: {
     width: 28, height: 36, borderRadius: 4,
@@ -546,12 +655,12 @@ const styles = StyleSheet.create({
   pileCount: { fontFamily: 'Courier New', fontSize: 14, fontWeight: 'bold', color: Colors.text },
   pileLabel: { fontFamily: 'Courier New', fontSize: 7, color: Colors.textDim, letterSpacing: 1 },
 
-  // ── Effects (shared) ───────────────────────────────
+  // ── Effects ──────────────────────────────────────
   effectRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 3, marginTop: 2 },
   effectBadge: { borderWidth: 1, borderRadius: 4, paddingHorizontal: 4, paddingVertical: 1 },
   effectText: { fontFamily: 'Courier New', fontSize: 8, fontWeight: 'bold' },
 
-  // ── Cards ──────────────────────────────────────────
+  // ── Cards ────────────────────────────────────────
   card: {
     width: CARD_W,
     height: CARD_H,
@@ -573,6 +682,12 @@ const styles = StyleSheet.create({
     elevation: 10,
     shadowOpacity: 0.6,
     shadowRadius: 12,
+  },
+  cardHighlighted: {
+    shadowColor: Colors.yellow,
+    shadowOpacity: 0.9,
+    shadowRadius: 16,
+    elevation: 10,
   },
   costBadge: {
     position: 'absolute', top: -1, left: -1,
@@ -609,7 +724,7 @@ const styles = StyleSheet.create({
   },
   tapToPlayText: { fontFamily: 'Courier New', fontSize: 8, fontWeight: 'bold', color: Colors.bg, letterSpacing: 1 },
 
-  // ── End turn button ────────────────────────────────
+  // ── End turn button ──────────────────────────────
   endTurnBtn: {
     borderWidth: 2,
     borderColor: Colors.border,
@@ -627,13 +742,21 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 5,
   },
+  endTurnBtnHighlighted: {
+    borderColor: Colors.yellow,
+    shadowColor: Colors.yellow,
+    shadowOpacity: 0.8,
+    shadowRadius: 16,
+    elevation: 8,
+  },
   endTurnText: {
     fontFamily: 'Courier New', fontSize: 12, fontWeight: 'bold',
     color: Colors.textDim, letterSpacing: 2,
   },
   endTurnTextActive: { color: Colors.cyan },
+  endTurnTextHighlighted: { color: Colors.yellow },
 
-  // ── Modal ──────────────────────────────────────────
+  // ── Modal ────────────────────────────────────────
   modalBg: {
     flex: 1, backgroundColor: 'rgba(0,0,0,0.85)',
     alignItems: 'center', justifyContent: 'center',
@@ -647,9 +770,9 @@ const styles = StyleSheet.create({
     gap: 16,
     minWidth: 260,
   },
-  modalTitle: { fontFamily: 'Courier New', fontSize: 26, fontWeight: 'bold', letterSpacing: 3 },
+  modalTitle: { fontFamily: 'Courier New', fontSize: 22, fontWeight: 'bold', letterSpacing: 3 },
   modalSub: { fontFamily: 'Courier New', fontSize: 12, color: Colors.textDim },
-  modalCb: { fontFamily: 'Courier New', fontSize: 13, color: Colors.yellow },
+  modalTip: { fontFamily: 'Courier New', fontSize: 11, color: Colors.yellow },
   modalBtn: {
     borderWidth: 2, borderRadius: 8,
     paddingVertical: 12, paddingHorizontal: 32,

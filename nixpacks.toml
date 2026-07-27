@@ -2,4 +2,4 @@
 cmds = ["echo 'Skipping static build - Metro builds on demand'"]
 
 [start]
-cmd = "cd artifacts/techno-rogue-mobile && CI=1 npx expo start --tunnel --port $PORT"
+cmd = "cd artifacts/techno-rogue && CI=1 npx expo start --web --port $PORT --non-interactive"
