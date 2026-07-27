@@ -22,6 +22,8 @@ export default function RootLayout() {
           <Stack.Screen name="index" />
           <Stack.Screen name="map" />
           <Stack.Screen name="combat" />
+          <Stack.Screen name="tutorial-combat" />
+          <Stack.Screen name="tutorial-info" />
         </Stack>
         {Platform.OS === 'web' && <WebExpoPopup />}
       </View>

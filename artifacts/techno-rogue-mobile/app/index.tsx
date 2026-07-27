@@ -98,6 +98,23 @@ export default function MenuScreen() {
             {selected ? '[ JACK IN ]' : 'SELECT A CLASS'}
           </Text>
         </TouchableOpacity>
+
+        <View style={styles.secondaryBtns}>
+          <TouchableOpacity
+            style={styles.secondaryBtn}
+            onPress={() => router.push('/tutorial-combat')}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.secondaryBtnText, { color: Colors.yellow }]}>⚔ TUTORIAL</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.secondaryBtn}
+            onPress={() => router.push('/tutorial-info')}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.secondaryBtnText, { color: Colors.cyan }]}>? HOW TO PLAY</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -244,5 +261,25 @@ const styles = StyleSheet.create({
   },
   startBtnTextDisabled: {
     color: Colors.textDim,
+  },
+  secondaryBtns: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 10,
+  },
+  secondaryBtn: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 6,
+    paddingVertical: 10,
+    alignItems: 'center',
+    backgroundColor: Colors.bgCard,
+  },
+  secondaryBtnText: {
+    fontFamily: 'Courier New',
+    fontSize: 10,
+    fontWeight: 'bold',
+    letterSpacing: 1,
   },
 });
