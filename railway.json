@@ -8,7 +8,7 @@
     }
   },
   "deploy": {
-    "startCommand": "cd artifacts/techno-rogue && CI=1 npx expo start --web --port $PORT --non-interactive",
+    "startCommand": "cd artifacts/techno-rogue-mobile && CI=1 npx expo start --tunnel --port $PORT",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 5
   }
