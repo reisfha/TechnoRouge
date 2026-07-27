@@ -86,6 +86,14 @@ const STEP_MESSAGES: Record<TutorialStep, string> = {
   victory: 'Combat complete! You defeated the Patrol ICE.',
 };
 
+const NEXT_STEP: Partial<Record<TutorialStep, TutorialStep>> = {
+  welcome: 'explain_intent',
+  explain_intent: 'explain_cards',
+  explain_cards: 'play_attack',
+  explain_energy: 'end_turn',
+  your_turn: 'free_play',
+};
+
 export default function TutorialCombatScreen() {
   const game = useGame();
   const [selectedCard, setSelectedCard] = useState<number | null>(null);
@@ -150,11 +158,10 @@ export default function TutorialCombatScreen() {
 
     const onTurnChanged = (_event: any, data: any) => {
       if (data?.phase === 'enemy_turn') {
-        scheduleAdvance('enemy_turn', 300);
+        advanceStep('enemy_turn');
       } else if (data?.phase === 'player_turn' && stepIndexRef.current >= 6) {
-        if (tutorialStep === 'enemy_turn' || tutorialStep === 'your_turn') {
-          scheduleAdvance('your_turn', 500);
-          setTimeout(() => advanceStep('free_play'), 2000);
+        if (tutorialStep === 'enemy_turn') {
+          advanceStep('your_turn');
         }
       }
     };
@@ -178,16 +185,10 @@ export default function TutorialCombatScreen() {
     };
   }, [tutorialStep, scheduleAdvance, advanceStep]);
 
-  // Auto-advance initial steps
-  useEffect(() => {
-    if (tutorialStep === 'welcome') {
-      scheduleAdvance('explain_intent', 1500);
-    } else if (tutorialStep === 'explain_intent') {
-      scheduleAdvance('explain_cards', 2500);
-    } else if (tutorialStep === 'explain_cards') {
-      scheduleAdvance('play_attack', 2000);
-    }
-  }, [tutorialStep, scheduleAdvance]);
+  const goNext = useCallback(() => {
+    const next = NEXT_STEP[tutorialStep];
+    if (next) advanceStep(next);
+  }, [tutorialStep, advanceStep]);
 
   if (!player) {
     return (
@@ -225,6 +226,11 @@ export default function TutorialCombatScreen() {
       {showTip && (
         <Animated.View style={[styles.tipBanner, { opacity: tipOpacity }]}>
           <Text style={styles.tipText}>{STEP_MESSAGES[tutorialStep]}</Text>
+          {NEXT_STEP[tutorialStep] && (
+            <TouchableOpacity style={styles.tipNextBtn} onPress={goNext} activeOpacity={0.8}>
+              <Text style={styles.tipNextText}>NEXT →</Text>
+            </TouchableOpacity>
+          )}
           {tutorialStep === 'free_play' && (
             <TouchableOpacity onPress={() => setShowTip(false)}>
               <Text style={styles.tipDismiss}>✕</Text>
@@ -513,6 +519,21 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.textDim,
     paddingHorizontal: 4,
+  },
+  tipNextBtn: {
+    borderWidth: 1,
+    borderColor: Colors.yellow,
+    borderRadius: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    marginLeft: 8,
+  },
+  tipNextText: {
+    fontFamily: 'Courier New',
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: Colors.yellow,
+    letterSpacing: 1,
   },
 
   // ── Enemy section ────────────────────────────────
