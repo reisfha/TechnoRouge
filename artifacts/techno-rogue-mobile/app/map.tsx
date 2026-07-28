@@ -1,6 +1,6 @@
 'use no memo';
 
-import { useCallback } from 'react';
+import React, { useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions,
 } from 'react-native';
@@ -67,7 +67,8 @@ const ACT_NAMES: Record<number, string> = {
 };
 
 export default function MapScreen() {
-  'use no memo';
+  'use no memo'; // React Compiler opt-out: reads the mutation-based Game
+  // singleton (player state mutates in place with a stable reference).
   const game = useGame();
 
   const map = game.map;

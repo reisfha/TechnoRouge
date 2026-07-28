@@ -15,9 +15,6 @@
     "eas:update": "eas update",
     "eas:submit": "eas submit"
   },
-  "dependencies": {
-    "@workspace/game-logic": "workspace:*"
-  },
   "devDependencies": {
     "@babel/core": "^7.25.2",
     "@expo-google-fonts/inter": "^0.4.0",

@@ -10,13 +10,14 @@ import { router } from 'expo-router';
 import { useGame } from '../context/GameContext';
 import { Colors } from '../constants/colors';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
-// ── Card sizing: 2:3 ratio like STS ──────────────────────────
-const CARD_W = Math.max(76, Math.min(width * 0.13, 100));
-const CARD_H = CARD_W * 1.5;
+// Size cards off the SHORT (height) axis so they always fit the landscape
+// viewport. Deriving height from width alone let the fixed top/bottom bars
+// squeeze the flex:1 hand area to ~0px, clipping the cards to invisibility.
+const CARD_H = Math.max(112, Math.min(height * 0.42, 160));
+const CARD_W = Math.min(CARD_H / 1.5, (width - 32) / 3.5, 110);
 
-// ── Card fan math (matches web HandDisplay.ts) ────────────────
 const MAX_FAN_SPREAD = 24;
 const DEG_PER_CARD = 5;
 
@@ -63,7 +64,10 @@ const EFFECT_COLORS: Record<string, string> = {
 };
 
 export default function CombatScreen() {
-  'use no memo';
+  'use no memo'; // React Compiler opt-out: this screen reads the mutation-based
+  // Game singleton, whose arrays (player.hand, enemies) mutate in place with a
+  // stable reference. RC's memoization assumes immutability and would cache the
+  // initial empty hand forever, making drawn cards invisible.
   const game = useGame();
   const [selectedCard, setSelectedCard] = useState<number | null>(null);
   const [showResult, setShowResult] = useState(false);
@@ -404,8 +408,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingTop: 4,
-    gap: 12,
+    paddingTop: 12,
+    gap: 16,
+    flexShrink: 1,
   },
   enemyCard: {
     flex: 1,
@@ -533,7 +538,24 @@ const styles = StyleSheet.create({
   orbSpent: { backgroundColor: Colors.bgPanel, shadowOpacity: 0, elevation: 0, opacity: 0.3 },
   energyText: { fontFamily: 'Courier New', fontSize: 11, color: Colors.energy, fontWeight: 'bold' },
 
-  // Pile boxes (shared)
+  // Phase banner
+  phaseBanner: {
+    alignItems: 'center', paddingVertical: 6,
+    backgroundColor: Colors.bgPanel,
+    borderBottomWidth: 1, borderBottomColor: Colors.border,
+  },
+  phaseText: { fontFamily: 'Courier New', fontSize: 13, color: Colors.red, letterSpacing: 3 },
+
+  // Hand area
+  handArea: {
+    flex: 1,
+    flexShrink: 0,
+    minHeight: CARD_H + 24,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  deckInfo: { paddingHorizontal: 6, alignItems: 'center' },
   pileBox: { alignItems: 'center', gap: 2 },
   pileIcon: {
     width: 28, height: 36, borderRadius: 4,
