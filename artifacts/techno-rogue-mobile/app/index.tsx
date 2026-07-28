@@ -39,11 +39,12 @@ export default function MenuScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <View style={styles.root}>
       <GridScanBackground
         color={selectedClass?.color ?? Colors.cyan}
         variant={CLASS_BG_VARIANTS[selected ?? ''] ?? 'grid'}
       />
+      <SafeAreaView style={styles.safe}>
 
       <View style={styles.header}>
         <Text style={styles.title}>TECHNO<Text style={styles.titleAccent}>ROGUE</Text></Text>
@@ -127,13 +128,16 @@ export default function MenuScreen() {
         </View>
       </View>
     </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
   safe: {
     flex: 1,
-    backgroundColor: Colors.bg,
   },
   header: {
     alignItems: 'center',

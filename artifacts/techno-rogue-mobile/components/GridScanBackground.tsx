@@ -60,8 +60,8 @@ export function GridScanBackground({ color = Colors.cyan, variant = 'grid' }: Pr
 
   useEffect(() => {
     if (variant === 'dataRain') {
-      const animations = rainAnims.map((anim, i) =>
-        Animated.loop(
+      const loops = rainAnims.map((anim, i) => {
+        const loop = Animated.loop(
           Animated.sequence([
             Animated.timing(anim, {
               toValue: height + 50,
@@ -74,11 +74,14 @@ export function GridScanBackground({ color = Colors.cyan, variant = 'grid' }: Pr
               useNativeDriver: false,
             }),
           ]),
-          { delay: rainColumns[i].delay },
-        ),
-      );
-      animations.forEach((a) => a.start());
-      return () => animations.forEach((a) => a.stop());
+        );
+        return Animated.sequence([
+          Animated.delay(rainColumns[i].delay),
+          loop,
+        ]);
+      });
+      loops.forEach((a) => a.start());
+      return () => loops.forEach((a) => a.stop());
     }
   }, [variant]);
 
@@ -105,8 +108,8 @@ export function GridScanBackground({ color = Colors.cyan, variant = 'grid' }: Pr
 
   useEffect(() => {
     if (variant === 'particles') {
-      const animations = particleAnims.map((anim, i) =>
-        Animated.loop(
+      const loops = particleAnims.map((anim, i) => {
+        const loop = Animated.loop(
           Animated.sequence([
             Animated.timing(anim, {
               toValue: 1,
@@ -119,11 +122,14 @@ export function GridScanBackground({ color = Colors.cyan, variant = 'grid' }: Pr
               useNativeDriver: false,
             }),
           ]),
-          { delay: particleOffsets[i].delay },
-        ),
-      );
-      animations.forEach((a) => a.start());
-      return () => animations.forEach((a) => a.stop());
+        );
+        return Animated.sequence([
+          Animated.delay(particleOffsets[i].delay),
+          loop,
+        ]);
+      });
+      loops.forEach((a) => a.start());
+      return () => loops.forEach((a) => a.stop());
     }
   }, [variant]);
 
