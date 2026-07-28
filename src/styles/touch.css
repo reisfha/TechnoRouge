@@ -1,0 +1,59 @@
+/* Mobile Controls - Virtual Joystick & Aim Zone */
+
+#mobile-controls {
+  display: none;
+}
+
+@media (pointer: coarse), (max-width: 768px) {
+  #mobile-controls {
+    display: block;
+  }
+}
+
+.joystick-zone::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 25%;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 2px solid rgba(68, 221, 255, 0.15);
+  background: rgba(68, 221, 255, 0.03);
+  transform: translate(-50%, 50%);
+  pointer-events: none;
+}
+
+.joystick-zone::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 25%;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid rgba(68, 221, 255, 0.1);
+  background: rgba(68, 221, 255, 0.05);
+  transform: translate(-50%, 50%);
+  pointer-events: none;
+}
+
+.aim-zone::before {
+  content: '';
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: 'Courier New', monospace;
+  font-size: 10px;
+  color: rgba(68, 221, 255, 0.15);
+  letter-spacing: 1px;
+  pointer-events: none;
+}
+
+/* Hide desktop hint text on mobile */
+@media (pointer: coarse) {
+  #ui-overlay .world-help-text {
+    display: none;
+  }
+}
