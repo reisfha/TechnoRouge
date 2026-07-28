@@ -3,13 +3,11 @@ import { StatusBar } from 'expo-status-bar';
 import { View, StyleSheet } from 'react-native';
 import { GameProvider } from '../context/GameContext';
 import { Colors } from '../constants/colors';
-import { GridScanBackground } from '../components/GridScanBackground';
 
 export default function RootLayout() {
   return (
     <GameProvider>
       <View style={styles.root}>
-        <GridScanBackground />
         <StatusBar style="light" backgroundColor={Colors.bg} />
         <Stack
           screenOptions={{
