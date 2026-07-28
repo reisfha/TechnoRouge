@@ -1,6 +1,6 @@
 'use no memo';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions,
 } from 'react-native';
@@ -9,14 +9,27 @@ import { router } from 'expo-router';
 import { useGame } from '../context/GameContext';
 import { CLASS_DEFINITIONS } from '@workspace/game-logic';
 import { Colors } from '../constants/colors';
+import { GridScanBackground } from '../components/GridScanBackground';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48) / 2;
+
+const CLASS_BG_VARIANTS: Record<string, 'grid' | 'dataRain' | 'pulseRings' | 'particles'> = {
+  netrunner: 'grid',
+  cracker: 'dataRain',
+  guardian: 'pulseRings',
+  infectant: 'particles',
+};
 
 export default function MenuScreen() {
   'use no memo'; // React Compiler opt-out: reads the mutation-based Game singleton.
   const game = useGame();
   const [selected, setSelected] = useState<string | null>(null);
+
+  const selectedClass = useMemo(
+    () => CLASS_DEFINITIONS.find((c) => c.id === selected),
+    [selected],
+  );
 
   function startRun() {
     if (!selected) return;
@@ -27,12 +40,10 @@ export default function MenuScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      {/* Grid lines background */}
-      <View style={styles.gridOverlay} pointerEvents="none">
-        {Array.from({ length: 12 }).map((_, i) => (
-          <View key={i} style={[styles.gridLine, { top: i * 60 }]} />
-        ))}
-      </View>
+      <GridScanBackground
+        color={selectedClass?.color ?? Colors.cyan}
+        variant={CLASS_BG_VARIANTS[selected ?? ''] ?? 'grid'}
+      />
 
       <View style={styles.header}>
         <Text style={styles.title}>TECHNO<Text style={styles.titleAccent}>ROGUE</Text></Text>
@@ -58,7 +69,6 @@ export default function MenuScreen() {
               onPress={() => setSelected(cls.id)}
               activeOpacity={0.75}
             >
-              {/* Color accent bar */}
               <View style={[styles.classAccentBar, { backgroundColor: cls.color }]} />
 
               <Text style={[styles.className, { color: cls.color }]}>{cls.name.toUpperCase()}</Text>
@@ -124,18 +134,6 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: Colors.bg,
-  },
-  gridOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    overflow: 'hidden',
-  },
-  gridLine: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    height: 1,
-    backgroundColor: Colors.border,
-    opacity: 0.3,
   },
   header: {
     alignItems: 'center',
