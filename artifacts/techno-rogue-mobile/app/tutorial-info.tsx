@@ -1,6 +1,5 @@
 'use no memo';
 
-import React from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
 } from 'react-native';
@@ -197,7 +196,7 @@ const styles = StyleSheet.create({
   tipBox: {
     backgroundColor: Colors.bgPanel,
     borderWidth: 1,
-    borderColor: Colors.yellow + '44',
+    borderColor: `${Colors.yellow}44`,
     borderRadius: 8,
     padding: 14,
     marginTop: 4,

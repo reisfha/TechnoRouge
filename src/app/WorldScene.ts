@@ -30,8 +30,6 @@ const ENEMY_SPAWNS: EnemyEntityDef[] = [
 export class WorldScene {
   private scene: THREE.Scene;
   private camera: THREE.PerspectiveCamera;
-  private terrain!: Terrain;
-  private scenery!: Scenery;
   private player!: PlayerController;
   private cameraController!: CameraController;
   private collectibles: Collectible[] = [];

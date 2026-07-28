@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.5.4/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.5.5/schema.json",
   "vcs": {
     "enabled": true,
     "clientKind": "git",
@@ -25,14 +25,22 @@
       },
       "suspicious": {
         "noExplicitAny": "off",
-        "useIterableCallbackReturn": "off"
+        "useIterableCallbackReturn": "off",
+        "noControlCharactersInRegex": "off"
       },
       "complexity": {
         "noStaticOnlyClass": "off"
+      },
+      "a11y": {
+        "useHtmlLang": "off",
+        "noSvgWithoutTitle": "off"
       }
     }
   },
   "assist": {
     "enabled": false
+  },
+  "javascript": {
+    "globals": ["__DEV__", "QRCodeStyling"]
   }
 }

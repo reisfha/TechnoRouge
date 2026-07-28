@@ -1,8 +1,8 @@
-const fs = require('fs');
-const path = require('path');
-const { spawn } = require('child_process');
-const { Readable } = require('stream');
-const { pipeline } = require('stream/promises');
+const fs = require('node:fs');
+const path = require('node:path');
+const { spawn } = require('node:child_process');
+const { Readable } = require('node:stream');
+const { pipeline } = require('node:stream/promises');
 
 let metroProcess = null;
 
@@ -340,7 +340,7 @@ function extractAssets(timestamp) {
   const extractFromBundle = (bundle, platform) => {
     for (const match of bundle.matchAll(assetPattern)) {
       const originalPath = match[1];
-      const filename = match[3] + '.' + match[4];
+      const filename = `${match[3]}.${match[4]}`;
 
       const tempUrl = new URL(`http://localhost:8081${originalPath}`);
       const unstablePath = tempUrl.searchParams.get('unstable_path');
@@ -491,9 +491,9 @@ function updateManifests(manifests, timestamp, baseUrl, assetsByHash) {
       Number(timestamp.split('-')[0]),
     ).toISOString();
     manifest.extra.expoClient.hostUri =
-      baseUrl.replace('https://', '') + '/' + platform;
+      `${baseUrl.replace('https://', '')}/${platform}`;
     manifest.extra.expoGo.debuggerHost =
-      baseUrl.replace('https://', '') + '/' + platform;
+      `${baseUrl.replace('https://', '')}/${platform}`;
     manifest.extra.expoGo.packagerOpts.dev = false;
 
     if (manifest.assets && manifest.assets.length > 0) {

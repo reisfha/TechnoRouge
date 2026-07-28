@@ -23,7 +23,7 @@ const server = new Server(
   { capabilities: { tools: {} } }
 );
 
-function makeStringTool(name: string, description: string, required: string[], optional?: string[]): Tool {
+function _makeStringTool(name: string, description: string, required: string[], optional?: string[]): Tool {
   return {
     name,
     description,
@@ -172,16 +172,16 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case "figma_get_node": {
-        const nodeIds = (args?.node_ids as string).split(",").map((s) => s.trim());
-        const data = await client.getFileNodes(args?.file_key as string, nodeIds, {
-          depth: args?.depth as number | undefined,
+        const nodeIds = (args!.node_ids as string).split(",").map((s) => s.trim());
+        const data = await client.getFileNodes(args!.file_key as string, nodeIds, {
+          depth: args!.depth as number | undefined,
         });
         return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
       }
 
       case "figma_get_images": {
-        const nodeIds = (args?.node_ids as string).split(",").map((s) => s.trim());
-        const data = await client.getImages(args?.file_key as string, nodeIds, {
+        const nodeIds = (args!.node_ids as string).split(",").map((s) => s.trim());
+        const data = await client.getImages(args!.file_key as string, nodeIds, {
           format: (args?.format as "png" | "jpg" | "svg" | "pdf") ?? "png",
           scale: args?.scale as number | undefined,
         });

@@ -1,5 +1,5 @@
-const { spawn } = require('child_process');
-const http = require('http');
+const { spawn } = require('node:child_process');
+const http = require('node:http');
 
 const proc = spawn('npx', ['expo', 'start', '--tunnel', '--port', '8000'], {
   env: { ...process.env, CI: '1' },
@@ -25,12 +25,12 @@ function fetchTunnelUrl() {
     res.on('end', () => {
       try {
         const data = JSON.parse(body);
-        const tunnel = data.tunnels && data.tunnels[0];
-        if (tunnel && tunnel.public_url) {
+        const tunnel = data.tunnels?.[0];
+        if (tunnel?.public_url) {
           const ngrokUrl = tunnel.public_url;
           const expUrl = ngrokUrl.replace('https://', 'exp://').replace('http://', 'exp://');
           console.log('\n\n╔══════════════════════════════════════════════════╗');
-          console.log('║  EXPO GO URL: ' + expUrl);
+          console.log(`║  EXPO GO URL: ${expUrl}`);
           console.log('╚══════════════════════════════════════════════════╝\n');
         }
       } catch (e) {

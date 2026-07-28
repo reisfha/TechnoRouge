@@ -70,7 +70,7 @@ export class PlayerController {
     if (toTarget.length() > 0.01) {
       toTarget.normalize();
       const targetAngle = Math.atan2(toTarget.x, toTarget.z);
-      let currentAngle = this.mesh.rotation.y;
+      const currentAngle = this.mesh.rotation.y;
       let diff = targetAngle - currentAngle;
       while (diff > Math.PI) diff -= Math.PI * 2;
       while (diff < -Math.PI) diff += Math.PI * 2;

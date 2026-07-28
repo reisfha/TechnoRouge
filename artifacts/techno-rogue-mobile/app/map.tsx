@@ -1,6 +1,6 @@
 'use no memo';
 
-import React, { useCallback } from 'react';
+import { useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions,
 } from 'react-native';
@@ -42,10 +42,10 @@ function getConnections(map: { layers: { floor: number; nodes: MapNode[] }[] }) 
         const srcVisited = node.visited;
         const tgtVisited = target.visited;
         const color = srcVisited && tgtVisited
-          ? Colors.cyan + '88'
+          ? `${Colors.cyan}88`
           : srcVisited
-            ? Colors.borderBright + 'aa'
-            : Colors.border + '55';
+            ? `${Colors.borderBright}aa`
+            : `${Colors.border}55`;
         lines.push({
           x1: getNodeCenterX(node.column),
           y1: getNodeCenterY(f),

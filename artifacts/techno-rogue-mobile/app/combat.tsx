@@ -291,7 +291,7 @@ export default function CombatScreen() {
                 </View>
 
                 {/* Card art */}
-                <View style={[styles.cardArt, { borderColor: cardColor + '44' }]}>
+                <View style={[styles.cardArt, { borderColor: `${cardColor}44` }]}>
                   <Text style={[styles.cardArtSymbol, { color: cardColor }]}>
                     {CARD_TYPE_SYMBOLS[card.type] || '◆'}
                   </Text>
@@ -457,24 +457,14 @@ const styles = StyleSheet.create({
   blockPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.cyan + '22',
+    backgroundColor: `${Colors.cyan}22`,
     borderWidth: 1,
-    borderColor: Colors.cyan + '66',
+    borderColor: `${Colors.cyan}66`,
     borderRadius: 8,
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
   blockPillText: { fontFamily: 'Courier New', fontSize: 11, fontWeight: 'bold', color: Colors.block },
-
-  // ── Phase banner ───────────────────────────────────
-  phaseBanner: {
-    alignItems: 'center',
-    paddingVertical: 4,
-    backgroundColor: Colors.bgPanel,
-    borderTopWidth: 1, borderTopColor: Colors.border,
-    borderBottomWidth: 1, borderBottomColor: Colors.border,
-  },
-  phaseText: { fontFamily: 'Courier New', fontSize: 12, color: Colors.red, letterSpacing: 3 },
 
   // ── Bottom panel (STS-style three-column) ──────────
   bottomPanel: {
@@ -563,7 +553,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: Colors.border,
     alignItems: 'center', justifyContent: 'center',
   },
-  pileIconDiscard: { borderColor: Colors.textDim + '44' },
+  pileIconDiscard: { borderColor: `${Colors.textDim}44` },
   pileIconText: { fontSize: 14, color: Colors.textDim },
   pileCount: { fontFamily: 'Courier New', fontSize: 14, fontWeight: 'bold', color: Colors.text },
   pileLabel: { fontFamily: 'Courier New', fontSize: 7, color: Colors.textDim, letterSpacing: 1 },

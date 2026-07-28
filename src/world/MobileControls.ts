@@ -15,7 +15,6 @@ export class MobileControls {
   private aimZoneEl: HTMLDivElement;
 
   private joystickCenter: { x: number; y: number } = { x: 0, y: 0 };
-  private joystickActive: boolean = false;
   private joystickTouchId: number | null = null;
 
   private lastAimX: number = 0;
@@ -110,8 +109,8 @@ export class MobileControls {
         this.joystickActive = true;
         this.joystickCenter = { x: touch.clientX, y: touch.clientY };
         this.knobEl.style.display = 'block';
-        this.knobEl.style.left = touch.clientX + 'px';
-        this.knobEl.style.top = touch.clientY + 'px';
+        this.knobEl.style.left = `${touch.clientX}px`;
+        this.knobEl.style.top = `${touch.clientY}px`;
       }
 
       if (this.aimZoneEl.contains(el) && this.aimTouchId === null) {
@@ -141,8 +140,8 @@ export class MobileControls {
           clampedY = (dy / dist) * JOYSTICK_RADIUS;
         }
 
-        this.knobEl.style.left = (this.joystickCenter.x + clampedX) + 'px';
-        this.knobEl.style.top = (this.joystickCenter.y + clampedY) + 'px';
+        this.knobEl.style.left = `${this.joystickCenter.x + clampedX}px`;
+        this.knobEl.style.top = `${this.joystickCenter.y + clampedY}px`;
 
         if (dist < DEAD_ZONE) {
           this.moveDir.set(0, 0);

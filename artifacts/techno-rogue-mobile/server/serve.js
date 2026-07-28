@@ -9,9 +9,9 @@
  * Zero external dependencies — uses only Node.js built-ins (http, fs, path).
  */
 
-const http = require('http');
-const fs = require('fs');
-const path = require('path');
+const http = require('node:http');
+const fs = require('node:fs');
+const path = require('node:path');
 
 const STATIC_ROOT = path.resolve(__dirname, '..', 'static-build');
 const TEMPLATE_PATH = path.resolve(__dirname, 'templates', 'landing-page.html');
@@ -68,7 +68,7 @@ function serveManifest(platform, res) {
 function serveLandingPage(req, res, landingPageTemplate, appName) {
   const forwardedProto = req.headers['x-forwarded-proto'];
   const protocol = forwardedProto || 'https';
-  const host = req.headers['x-forwarded-host'] || req.headers['host'];
+  const host = req.headers['x-forwarded-host'] || req.headers.host;
   const baseUrl = `${protocol}://${host}`;
   const expsUrl = `${host}`;
 
