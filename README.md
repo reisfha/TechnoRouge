@@ -30,7 +30,7 @@ Each class has a unique 10-card starting deck. Unlock new class-specific cards b
 
 | Phase | What |
 |-------|------|
-| **0** | Foundation cleanup — integrate unused systems, fix targeting, exhaust, hand limits |
+| **0** ✅ | Foundation cleanup — integrate unused systems, fix targeting, exhaust, hand limits |
 | **1** | Roguelike loop — branching map, encounters, post-combat card rewards |
 | **2** | Economy & shops — CryptoBytes, card removal, Ram Chip consumables |
 | **3** | Relics — passive modifiers that define builds (30-40 total) |
@@ -39,6 +39,8 @@ Each class has a unique 10-card starting deck. Unlock new class-specific cards b
 | **6** | Audio — synthwave soundtrack, combat music, full SFX suite |
 | **7** | Meta progression — unlockable cards/relics/classes, difficulty modifiers |
 | **8** | Polish & release — tutorial, save/load, mobile, accessibility |
+
+Each class has its own milestone for tracking card and balance work.
 
 **Minimum viable game = Phases 0-3.**
 
